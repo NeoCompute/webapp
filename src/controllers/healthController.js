@@ -1,0 +1,15 @@
+const db = require("../databases/postgresDbConnection");
+
+const healthCheck = async (req, res) => {
+  const isDbConnected = await db.testDbConnection();
+  console.log("is DB Connected: ", isDbConnected);
+
+  if (isDbConnected) {
+    res.status(200).end();
+  } else {
+    res.status(503).end();
+  }
+  return res;
+};
+
+module.exports = { healthCheck };
