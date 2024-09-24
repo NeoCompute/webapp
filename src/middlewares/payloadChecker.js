@@ -7,9 +7,7 @@ module.exports = (req, res, next) => {
     Object.keys(req.body).length > 0;
 
   if (hasPayload) {
-    return res
-      .status(400)
-      .send("Bad Request: GET requests should not contain a payload."); // Check if the error message is allowed with the TA
+    return res.status(400).send(); // Check if the error message is allowed with the TA
   }
   next();
 }; // Checking req.body regardless of the presence of Conten-Length
