@@ -12,7 +12,7 @@ app.use("/", healthRoutes);
 
 // For undefined routes
 app.use((req, res) => {
-  res.status(404).send();
+  res.status(404).end();
 });
 
 module.exports = app;
