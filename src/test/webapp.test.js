@@ -79,3 +79,11 @@ describe("Test 7 | HealthCheck No Payload in Response", () => {
     expect(res.body).toEqual({}); // Ensure response body is empty
   });
 });
+
+// Test for undefined routes
+describe("Test 8 | HealthCheck Undefined Route", () => {
+  it("Expect 404 for undefined route", async () => {
+    const res = await request(app).get("/undefined-route");
+    expect(res.statusCode).toEqual(404);
+  });
+});
