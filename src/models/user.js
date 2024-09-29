@@ -39,10 +39,10 @@ const User = dbConnection.define(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    apiToken: {
+    token: {
       type: DataTypes.STRING,
-      unique: true,
       allowNull: true,
+      unique: true,
     },
   },
   {
