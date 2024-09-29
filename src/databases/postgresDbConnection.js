@@ -46,7 +46,19 @@ const testDbConnection = async () => {
   }
 };
 
+const syncDbConnection = async () => {
+  try {
+    await dbConnection.sync();
+    console.log("Database tables have been created successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error syncing database tables:", error);
+    return false;
+  }
+};
+
 module.exports = {
   dbConnection,
   testDbConnection,
+  syncDbConnection,
 };

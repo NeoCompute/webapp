@@ -12,6 +12,6 @@ router.use(methodFilter);
 router.use(payloadChecker);
 
 // Define /healthz route
-router.get("/healthz", healthCheck);
+router.get("/", healthCheck);
 
 module.exports = router;
