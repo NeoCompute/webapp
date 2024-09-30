@@ -295,3 +295,30 @@ describe("Test 11 | Update user information", () => {
     expect(res.body).toHaveProperty("message", "Invalid or expired token");
   });
 });
+
+describe("Test 12 | Method Not Allowed Tests for /v1/user/self", () => {
+  it("should return 405 Method Not Allowed for DELETE request", async () => {
+    const res = await request(app).delete("/v1/user/self");
+    expect(res.statusCode).toEqual(405);
+    expect(res.headers["allow"]).toEqual("GET, POST, PUT");
+  });
+
+  it("should return 405 Method Not Allowed for PATCH request", async () => {
+    const res = await request(app).patch("/v1/user/self");
+    expect(res.statusCode).toEqual(405);
+    expect(res.headers["allow"]).toEqual("GET, POST, PUT");
+  });
+
+  it("should return 405 Method Not Allowed for HEAD request", async () => {
+    const res = await request(app).head("/v1/user/self");
+    expect(res.statusCode).toEqual(405);
+    expect(res.headers["allow"]).toEqual("GET, POST, PUT");
+    expect(res.body).toEqual({}); // HEAD requests usually do not have a body
+  });
+
+  it("should return 405 Method Not Allowed for OPTIONS request", async () => {
+    const res = await request(app).options("/v1/user/self");
+    expect(res.statusCode).toEqual(405);
+    expect(res.headers["allow"]).toEqual("GET, POST, PUT");
+  });
+});
