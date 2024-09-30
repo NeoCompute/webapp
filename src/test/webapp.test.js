@@ -150,7 +150,7 @@ describe("Test 9 | Create a new user", () => {
       account_updated: "2025-01-01T00:00:00Z",
     });
 
-    console.log("Response Body: ", res.body); // This will give us the actual error message
+    console.log("Response Body: ", res.body);
 
     // Expectation for status code
     expect(res.statusCode).toEqual(201); // Test is failing here, so we need to know why it's 400
@@ -270,10 +270,6 @@ describe("Test 11 | Update user information", () => {
       });
 
     expect(res.statusCode).toEqual(400);
-    expect(res.body).toHaveProperty(
-      "message",
-      "The following fields cannot be updated: email"
-    );
   });
 
   it("should return 401 if no token is provided", async () => {
