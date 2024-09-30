@@ -1,5 +1,6 @@
 const express = require("express");
 const healthRoutes = require("./routes/healthRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -7,8 +8,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Register health check routes
-app.use("/", healthRoutes);
+// Register routes
+app.use("/healthz", healthRoutes);
+app.use("/v1", userRoutes);
 
 // For undefined routes
 app.use((req, res) => {
