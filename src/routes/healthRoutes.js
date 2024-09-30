@@ -1,6 +1,6 @@
 const express = require("express");
 const { healthCheck } = require("../controllers/healthController");
-const methodFilter = require("../middlewares/methodFilter");
+const methodHandler = require("../middlewares/methodHandler");
 const payloadChecker = require("../middlewares/payloadChecker");
 const setHealthCheckerHeader = require("../middlewares/setHealthCheckerHeaders");
 
@@ -8,7 +8,7 @@ const router = express.Router();
 
 // Middlewares
 router.use(setHealthCheckerHeader);
-router.use(methodFilter);
+router.use(methodHandler(["GET"]));
 router.use(payloadChecker);
 
 // Define /healthz route
