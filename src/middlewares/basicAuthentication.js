@@ -21,6 +21,11 @@ const basicAuthentication = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
 
+    const now = new Date();
+    if (now > user.expires_at) {
+      return res.status(401).json({ message: "Token expired" });
+    }
+
     // Attach user to request for further use
     req.user = user;
     next();

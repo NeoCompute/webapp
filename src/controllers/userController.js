@@ -2,12 +2,16 @@ const userService = require("../services/userService");
 const omitFields = require("../utils/omitFields");
 
 const getUserInfo = async (req, res) => {
-  const user = req.user;
-  // Exclude sensitive fields like password and token
   try {
-    const { password, token, account_created, account_updated, ...userData } =
-      user.toJSON();
-    res.status(200).json(userData);
+    const user = req.user.toJSON();
+    const safeUser = omitFields(user, [
+      "password",
+      "token",
+      "account_created",
+      "account_updated",
+      "token_expiry",
+    ]);
+    res.status(200).json(safeUser);
   } catch (err) {
     console.error("Fetch user error:", err);
     res.status(400).json({ message: "Failed to fetch user information" });
@@ -16,18 +20,6 @@ const getUserInfo = async (req, res) => {
 
 const createUserInfo = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
-  console.log("email :", email);
-
-  const forbiddenFields = ["account_created", "account_updated"];
-  const hasForbiddenFields = forbiddenFields.some((field) => field in req.body);
-
-  if (hasForbiddenFields) {
-    return res.status(400).json({
-      message: `The following fields cannot be set manually: ${forbiddenFields.join(
-        ", "
-      )}`,
-    });
-  }
 
   try {
     const user = await userService.createUser({
@@ -38,10 +30,15 @@ const createUserInfo = async (req, res) => {
     });
     const userObj = user.toJSON();
 
-    const fieldsToOmit = ["password", "account_created", "account_updated"];
+    const fieldsToOmit = [
+      "password",
+      "account_created",
+      "account_updated",
+      "token_expiry",
+    ];
     const safeUser = omitFields(userObj, fieldsToOmit);
 
-    res.status(201).json(safeUser);
+    res.status(201).json(safeUser); // Return 201 if user is created successfully
   } catch (err) {
     console.error("Create user error:", err);
     if (err.message === "A user with this email already exists.") {
@@ -64,6 +61,7 @@ const updateUserInfo = async (req, res) => {
       "account_created",
       "token",
       "account_updated",
+      "token_expiry",
     ];
     const safeUser = omitFields(userObj, fieldsToOmit);
     res.status(200).json(safeUser);

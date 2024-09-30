@@ -44,6 +44,10 @@ const User = dbConnection.define(
       allowNull: true,
       unique: true,
     },
+    token_expiry: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "users",
@@ -55,5 +59,15 @@ const User = dbConnection.define(
 User.beforeUpdate((user, options) => {
   user.account_updated = new Date();
 });
+
+// Prevent manual setting of 'account_created' and 'account_updated'
+// User.beforeValidate((user, options) => {
+//   if (user.changed("account_created") && user.account_created !== undefined) {
+//     throw new Error('The field "account_created" cannot be set manually.');
+//   }
+//   if (user.changed("account_updated") && user.account_updated !== undefined) {
+//     throw new Error('The field "account_updated" cannot be set manually.');
+//   }
+// });
 
 module.exports = User;
