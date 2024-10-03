@@ -31,6 +31,10 @@ const User = dbConnection.define(
           args: [2, 30],
           msg: "First name must be between 2 and 30 characters",
         },
+        is: {
+          args: /^[a-zA-Z]+$/i,
+          msg: "First name must contain only letters",
+        },
       },
     },
     lastName: {
@@ -40,6 +44,10 @@ const User = dbConnection.define(
         len: {
           args: [2, 30],
           msg: "Last name must be between 2 and 30 characters",
+        },
+        is: {
+          args: /^[a-zA-Z]+$/i,
+          msg: "Last name must contain only letters",
         },
       },
     },
@@ -73,15 +81,5 @@ const User = dbConnection.define(
 User.beforeUpdate((user, options) => {
   user.account_updated = new Date();
 });
-
-// You can uncomment the following if you want to enforce immutability for 'account_created' and 'account_updated'
-// User.beforeValidate((user, options) => {
-//   if (user.changed("account_created") && user.account_created !== undefined) {
-//     throw new Error('The field "account_created" cannot be set manually.');
-//   }
-//   if (user.changed("account_updated") && user.account_updated !== undefined) {
-//     throw new Error('The field "account_updated" cannot be set manually.');
-//   }
-// });
 
 module.exports = User;
