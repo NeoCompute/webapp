@@ -1,5 +1,6 @@
 const userService = require("../services/userService");
 const omitFields = require("../utils/omitFields");
+const validateImmutableFields = require("../utils/validateImmutableFields");
 
 const getUserInfo = async (req, res, next) => {
   try {
@@ -20,6 +21,8 @@ const getUserInfo = async (req, res, next) => {
 const createUserInfo = async (req, res, next) => {
   try {
     const { firstName, lastName, email, password } = req.body;
+
+    validateImmutableFields(req.body, ["account_created", "account_updated"]);
 
     const user = await userService.createUser({
       firstName,
@@ -48,6 +51,11 @@ const updateUserInfo = async (req, res, next) => {
   const updates = req.body;
 
   try {
+    validateImmutableFields(req.body, [
+      "account_created",
+      "account_updated",
+      "email",
+    ]);
     const updatedUser = await userService.updateUser(userId, updates);
     const userObj = updatedUser.toJSON();
 
