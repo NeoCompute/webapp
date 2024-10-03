@@ -5,6 +5,11 @@ const { ValidationError } = require("sequelize");
 const { DatabaseError, ValidateError } = require("../errors/customErrors");
 const validatePassword = require("../utils/validatePassword");
 
+const dotenv = require("dotenv");
+dotenv.config();
+
+const saltRounds = process.env.BCRYPT_SALT_ROUNDS || 10;
+
 const filterAllowedFields = (updates, allowedFields) => {
   return Object.keys(updates)
     .filter((key) => allowedFields.includes(key))
@@ -28,7 +33,7 @@ const createUser = async (userData) => {
       throw new ValidateError("A user with this email already exists.");
     }
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(saltRounds);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const token = generateToken();
@@ -74,7 +79,7 @@ const updateUser = async (userId, updates) => {
     const filteredUpdates = filterAllowedFields(updates, allowedFields);
 
     if (filteredUpdates.password) {
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(saltRounds);
       filteredUpdates.password = await bcrypt.hash(
         filteredUpdates.password,
         salt
