@@ -205,23 +205,28 @@ describe("Test 9 | Create a new user", () => {
     expect(res.statusCode).toEqual(400);
   });
 
-  it("should ignore account_created and account_updated fields if provided", async () => {
+  it("should return 400 Bad Request when 'account_created' is included in the request body", async () => {
     const res = await request(app).post("/v1/user").send({
-      email: "newuserwithdates@gmail.com",
-      password: "NewPassword@123",
       firstName: "New",
       lastName: "User",
+      email: "newuser@example.com",
+      password: "password",
       account_created: "2023-01-01T00:00:00Z",
+    });
+
+    expect(res.statusCode).toEqual(400);
+  });
+
+  it("should return 400 Bad Request when 'account_updated' is included in the request body", async () => {
+    const res = await request(app).post("/v1/user").send({
+      firstName: "New",
+      lastName: "User",
+      email: "newuser@example.com",
+      password: "password",
       account_updated: "2023-01-01T00:00:00Z",
     });
 
-    expect(res.statusCode).toEqual(201);
-
-    const user = await User.findOne({
-      where: { email: "newuserwithdates@gmail.com" },
-    });
-    expect(user.account_created).not.toEqual(new Date("2023-01-01T00:00:00Z"));
-    expect(user.account_updated).not.toEqual(new Date("2023-01-01T00:00:00Z"));
+    expect(res.statusCode).toEqual(400);
   });
 });
 
@@ -307,6 +312,29 @@ describe("Test 11 | Update user information", () => {
     });
 
     expect(res.statusCode).toEqual(401);
+  });
+  it("should return 400 Bad Request when trying to update 'account_created'", async () => {
+    const res = await request(app)
+      .put("/v1/user/self")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        account_created: "2023-01-01T00:00:00Z",
+        firstName: "Updated",
+      });
+
+    expect(res.statusCode).toEqual(400);
+  });
+
+  it("should return 400 Bad Request when trying to update 'account_updated'", async () => {
+    const res = await request(app)
+      .put("/v1/user/self")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        account_updated: "2023-01-01T00:00:00Z",
+        lastName: "Updated",
+      });
+
+    expect(res.statusCode).toEqual(400);
   });
 });
 

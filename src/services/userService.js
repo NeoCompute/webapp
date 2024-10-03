@@ -59,21 +59,16 @@ const updateUser = async (userId, updates) => {
     const allowedFields = ["firstName", "lastName", "password"];
 
     const updateKeys = Object.keys(updates);
-    const invalidFields = updateKeys.filter(
-      (key) => !allowedFields.includes(key)
-    );
 
-    if (updates.password) {
+    if (updates.hasOwnProperty("password")) {
+      if (!updates.password || updates.password.trim() === "") {
+        throw new ValidateError("Password cannot be empty.");
+      }
+
       const passwordError = validatePassword(updates.password);
       if (passwordError) {
         throw new ValidateError(passwordError);
       }
-    }
-
-    if (invalidFields.length > 0) {
-      throw new ValidateError(
-        `The following fields cannot be updated: ${invalidFields.join(", ")}`
-      );
     }
 
     const filteredUpdates = filterAllowedFields(updates, allowedFields);
@@ -99,7 +94,7 @@ const updateUser = async (userId, updates) => {
 
     return updatedUser;
   } catch (error) {
-    console.error("Error in updateUser:", error); // Logging error
+    console.error("Error in updateUser:", error);
     if (error instanceof ValidationError || error instanceof ValidateError) {
       throw error;
     }
