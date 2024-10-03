@@ -8,7 +8,7 @@ const router = express.Router();
 // Public Routes
 router.post("/user", userController.createUserInfo);
 
-router.use("/user/self", methodHandler(["GET", "POST", "PUT"]));
+router.use("/user/self", methodHandler(["GET", "PUT"]));
 
 // Protected Routes
 router.get("/user/self", authenticate, userController.getUserInfo);

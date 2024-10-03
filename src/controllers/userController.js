@@ -1,7 +1,7 @@
 const userService = require("../services/userService");
 const omitFields = require("../utils/omitFields");
 
-const getUserInfo = async (req, res) => {
+const getUserInfo = async (req, res, next) => {
   try {
     const user = req.user.toJSON();
     const safeUser = omitFields(user, [
@@ -13,15 +13,14 @@ const getUserInfo = async (req, res) => {
     ]);
     res.status(200).json(safeUser);
   } catch (err) {
-    console.error("Fetch user error:", err);
-    res.status(400).json({ message: "Failed to fetch user information" });
+    next(err); // Pass the error to the error handler middleware
   }
 };
 
-const createUserInfo = async (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
-
+const createUserInfo = async (req, res, next) => {
   try {
+    const { firstName, lastName, email, password } = req.body;
+
     const user = await userService.createUser({
       firstName,
       lastName,
@@ -40,15 +39,11 @@ const createUserInfo = async (req, res) => {
 
     res.status(201).json(safeUser); // Return 201 if user is created successfully
   } catch (err) {
-    console.error("Create user error:", err);
-    if (err.message === "A user with this email already exists.") {
-      return res.status(400).json({ message: err.message });
-    }
-    res.status(400).json({ message: "Failed to create user" });
+    next(err);
   }
 };
 
-const updateUserInfo = async (req, res) => {
+const updateUserInfo = async (req, res, next) => {
   const userId = req.user.id;
   const updates = req.body;
 
@@ -66,8 +61,7 @@ const updateUserInfo = async (req, res) => {
     const safeUser = omitFields(userObj, fieldsToOmit);
     res.status(200).json(safeUser);
   } catch (error) {
-    console.error("Update error:", error);
-    res.status(400).json({ message: "Failed to update user information" });
+    next(error);
   }
 };
 
