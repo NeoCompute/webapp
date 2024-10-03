@@ -1,6 +1,7 @@
 const express = require("express");
 const healthRoutes = require("./routes/healthRoutes");
 const userRoutes = require("./routes/userRoutes");
+const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
 
@@ -16,5 +17,7 @@ app.use("/v1", userRoutes);
 app.use((req, res) => {
   res.status(404).end();
 });
+
+app.use(errorHandler);
 
 module.exports = app;

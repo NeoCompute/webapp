@@ -14,7 +14,9 @@ const User = dbConnection.define(
       unique: true,
       allowNull: false,
       validate: {
-        isEmail: true,
+        isEmail: {
+          msg: "Must be a valid email address",
+        },
       },
     },
     password: {
@@ -24,10 +26,22 @@ const User = dbConnection.define(
     firstName: {
       type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        len: {
+          args: [2, 30],
+          msg: "First name must be between 2 and 30 characters",
+        },
+      },
     },
     lastName: {
       type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        len: {
+          args: [2, 30],
+          msg: "Last name must be between 2 and 30 characters",
+        },
+      },
     },
     account_created: {
       type: DataTypes.DATE,
@@ -60,7 +74,7 @@ User.beforeUpdate((user, options) => {
   user.account_updated = new Date();
 });
 
-// Prevent manual setting of 'account_created' and 'account_updated'
+// You can uncomment the following if you want to enforce immutability for 'account_created' and 'account_updated'
 // User.beforeValidate((user, options) => {
 //   if (user.changed("account_created") && user.account_created !== undefined) {
 //     throw new Error('The field "account_created" cannot be set manually.');
