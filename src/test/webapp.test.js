@@ -140,6 +140,7 @@ describe("Test 9 | Create a new user", () => {
     expect(res.statusCode).toEqual(400);
   });
 
+  // Password validation tests
   it("should return 400 for a password that is too short", async () => {
     const res = await request(app).post("/v1/user").send({
       email: "invalidpassworduser@gmail.com",
@@ -283,23 +284,57 @@ describe("Test 11 | Update user information", () => {
     expect(res.statusCode).toEqual(200);
   });
 
+  // Password validation tests for update
+  it("should return 400 for a password that is too short during update", async () => {
+    const res = await request(app)
+      .put("/v1/user/self")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        password: "short",
+      });
+
+    expect(res.statusCode).toEqual(400);
+  });
+
+  it("should return 400 for a password without an uppercase letter during update", async () => {
+    const res = await request(app)
+      .put("/v1/user/self")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        password: "password123!",
+      });
+
+    expect(res.statusCode).toEqual(400);
+  });
+
+  it("should return 400 for a password without a special character during update", async () => {
+    const res = await request(app)
+      .put("/v1/user/self")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        password: "Password123",
+      });
+
+    expect(res.statusCode).toEqual(400);
+  });
+
+  it("should return 400 for a password without a number during update", async () => {
+    const res = await request(app)
+      .put("/v1/user/self")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        password: "Password!",
+      });
+
+    expect(res.statusCode).toEqual(400);
+  });
+
   it("should return 400 when trying to update restricted fields", async () => {
     const res = await request(app)
       .put("/v1/user/self")
       .set("Authorization", `Bearer ${token}`)
       .send({
         email: "newemail@gmail.com",
-      });
-
-    expect(res.statusCode).toEqual(400);
-  });
-
-  it("should return 400 for invalid password during update", async () => {
-    const res = await request(app)
-      .put("/v1/user/self")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        password: "short",
       });
 
     expect(res.statusCode).toEqual(400);
@@ -313,6 +348,7 @@ describe("Test 11 | Update user information", () => {
 
     expect(res.statusCode).toEqual(401);
   });
+
   it("should return 400 Bad Request when trying to update 'account_created'", async () => {
     const res = await request(app)
       .put("/v1/user/self")

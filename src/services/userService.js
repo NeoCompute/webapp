@@ -8,8 +8,7 @@ const validatePassword = require("../utils/validatePassword");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const saltRounds = process.env.BCRYPT_SALT_ROUNDS || 10;
-
+const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
 const filterAllowedFields = (updates, allowedFields) => {
   return Object.keys(updates)
     .filter((key) => allowedFields.includes(key))
@@ -32,8 +31,10 @@ const createUser = async (userData) => {
     if (existingUser) {
       throw new ValidateError("A user with this email already exists.");
     }
+    console.log(saltRounds);
 
     const salt = await bcrypt.genSalt(saltRounds);
+
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const token = generateToken();
@@ -53,6 +54,7 @@ const createUser = async (userData) => {
   } catch (error) {
     console.error("Error in createUser:", error.message);
     if (error instanceof ValidationError || error instanceof ValidateError) {
+      console.log(error.message);
       throw error;
     }
     throw new DatabaseError("Error creating user.");
