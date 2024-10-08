@@ -75,6 +75,9 @@ jobs:
         run: |
           sudo service postgresql start
 
+      - name: Change Working Directory
+        run: cd /tmp
+
       # 7. Configure PostgreSQL
       - name: Configure PostgreSQL
         run: |
