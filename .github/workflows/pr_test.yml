@@ -18,7 +18,22 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: "14"
+
+      # Create the .env file with environment variables and use GitHub Secrets
+      - name: Create .env file
+        run: |
+          echo "PORT=3000" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_USER=cloudUser" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_DATABASE=cloudDB" >> .env
+          echo "DB_POOL_MAX=5" >> .env
+          echo "DB_POOL_MIN=0" >> .env
+          echo "DB_POOL_ACQUIRE=30000" >> .env
+          echo "DB_POOL_IDLE=10000" >> .env
+          echo "BCRYPT_SALT_ROUNDS=10" >> .env
 
       # Install dependencies
       - name: Install dependencies
