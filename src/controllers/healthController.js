@@ -8,6 +8,7 @@ const healthCheck = async (req, res) => {
   console.log("is DB Connected: ", isDbConnected);
 
   if (isDbConnected) {
+    
     res.status(200).end();
   } else {
     res.status(503).end();
