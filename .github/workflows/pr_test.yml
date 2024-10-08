@@ -9,6 +9,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      db:
+        image: postgres:13
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: cloudDB
+          POSTGRES_USER: cloudUser
+          POSTGRES_PASSWORD: Cloud@12345
+        options: >
+          --health-cmd="pg_isready" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=5
+
     steps:
       # Checkout the repository code
       - name: Checkout code
@@ -19,6 +34,14 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "14"
+
+      # Wait for PostgreSQL to be ready
+      - name: Wait for PostgreSQL
+        run: |
+          until docker exec ${{ job.services.db.id }} pg_isready -h 127.0.0.1 -p 5432; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 5
+          done
 
       # Create the .env file with environment variables
       - name: Create .env file
