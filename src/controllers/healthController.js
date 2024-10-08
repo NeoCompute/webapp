@@ -20,4 +20,3 @@ module.exports = { healthCheck };
 // test workflow
 // testing the workflow
 // Checking github commit
-// trigger status checks
