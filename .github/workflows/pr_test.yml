@@ -26,6 +26,21 @@ jobs:
       DATABASE_URL: postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/${{ secrets.DB_DATABASE }}
 
     steps:
+      - name: Print Environment Variables for Debugging
+        run: |
+          echo "-----------------------------"
+          echo "Environment Variables:"
+          echo "PORT: $PORT"
+          echo "DB_HOST: $DB_HOST"
+          echo "DB_PORT: $DB_PORT"
+          echo "DB_USER: $DB_USER"
+          echo "DB_DATABASE: $DB_DATABASE"
+          echo "DB_POOL_MAX: $DB_POOL_MAX"
+          echo "DB_POOL_MIN: $DB_POOL_MIN"
+          echo "DB_POOL_ACQUIRE: $DB_POOL_ACQUIRE"
+          echo "DB_POOL_IDLE: $DB_POOL_IDLE"
+          echo "-----------------------------"
+
       # 1. Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v3
