@@ -91,9 +91,9 @@ jobs:
       # 8. Wait for PostgreSQL to be ready
       - name: Wait for PostgreSQL to be Ready
         run: |
-          for i in {1..10}; do
-            psql "postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE" -c '\q' 2>/dev/null && break
-            echo "Waiting for PostgreSQL..."
+          for i in {1..5}; do
+            sudo -u clouduser psql "postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE" -c '\q' 2>/dev/null && break
+            echo "Waiting for PostgreSQL as clouduser..."
             sleep 5
           done
 
