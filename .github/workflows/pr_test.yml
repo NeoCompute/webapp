@@ -1,67 +1,84 @@
-name: Pull Request Tests
+name: PR Integration Tests
 
 on:
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened]
 
 jobs:
-  test:
+  integration-tests:
     runs-on: ubuntu-latest
 
-    services:
-      db:
-        image: postgres:13
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_DB: cloudDB
-          POSTGRES_USER: cloudUser
-          POSTGRES_PASSWORD: Cloud@12345
-        options: >
-          --health-cmd="pg_isready" 
-          --health-interval=10s 
-          --health-timeout=5s 
-          --health-retries=5
+    env:
+      # Environment variables sourced from GitHub Secrets
+      PORT: ${{ secrets.PORT }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_DATABASE: ${{ secrets.DB_DATABASE }}
+      DB_POOL_MAX: ${{ secrets.DB_POOL_MAX }}
+      DB_POOL_MIN: ${{ secrets.DB_POOL_MIN }}
+      DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
+      DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
+      BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
+      DATABASE_URL: postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/${{ secrets.DB_DATABASE }}
 
     steps:
-      # Checkout the repository code
-      - name: Checkout code
-        uses: actions/checkout@v2
+      # 1. Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      # Set up the environment (in this case, Node.js)
+      # 2. Set up Node.js environment
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: "14"
+          node-version: "22"
 
-      # Wait for PostgreSQL to be ready
-      - name: Wait for PostgreSQL
+      # 3. Cache Node.js dependencies to speed up workflow
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 4. Install project dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # 5. Install PostgreSQL
+      - name: Install PostgreSQL
         run: |
-          until docker exec ${{ job.services.db.id }} pg_isready -h 127.0.0.1 -p 5432; do
-            echo "Waiting for PostgreSQL to be ready..."
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+
+      # 6. Start PostgreSQL service
+      - name: Start PostgreSQL
+        run: |
+          sudo service postgresql start
+
+      # 7. Configure PostgreSQL
+      - name: Configure PostgreSQL
+        run: |
+          sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+          sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;"
+          sudo -u postgres psql -c "CREATE DATABASE $DB_DATABASE OWNER $DB_USER;"
+          sudo -u postgres psql -d $DB_NAME -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+
+          sudo service postgresql restart
+
+      # 8. Wait for PostgreSQL to be ready
+      - name: Wait for PostgreSQL to be Ready
+        run: |
+          for i in {1..10}; do
+            psql "postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE" -c '\q' 2>/dev/null && break
+            echo "Waiting for PostgreSQL..."
             sleep 5
           done
 
-      # Create the .env file with environment variables
-      - name: Create .env file
-        run: |
-          echo "PORT=3000" >> .env
-          echo "DB_HOST=127.0.0.1" >> .env
-          echo "DB_PORT=5432" >> .env
-          echo "DB_USER=cloudUser" >> .env
-          echo "DB_PASSWORD=Cloud@12345" >> .env
-          echo "DB_DATABASE=cloudDB" >> .env
-          echo "DB_POOL_MAX=5" >> .env
-          echo "DB_POOL_MIN=0" >> .env
-          echo "DB_POOL_ACQUIRE=30000" >> .env
-          echo "DB_POOL_IDLE=10000" >> .env
-          echo "BCRYPT_SALT_ROUNDS=10" >> .env
-
-      # Install dependencies
-      - name: Install dependencies
-        run: npm install
-
-      # Run tests
-      - name: Run tests
-        run: npm test
+      # 9. Run Integration Tests
+      - name: Run Integration Tests
+        run: npm run test
