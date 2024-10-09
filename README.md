@@ -26,6 +26,7 @@ DB_POOL_MAX=
 DB_POOL_MIN=
 DB_POOL_ACQUIRE=
 DB_POOL_IDLE=
+BCRYPT_SALT_ROUNDS=
 ```
 3. To Run the Application
 ```bash
