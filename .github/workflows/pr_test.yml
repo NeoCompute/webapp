@@ -10,22 +10,8 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.DB_DATABASE }}
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_DATABASE }}"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     env:
+      # Environment variables sourced from GitHub Secrets
       PORT: ${{ secrets.PORT }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PORT: ${{ secrets.DB_PORT }}
@@ -37,7 +23,7 @@ jobs:
       DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
       DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
       BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
-      DATABASE_URL: postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@localhost:${{ secrets.DB_PORT }}/${{ secrets.DB_DATABASE }}
+      DATABASE_URL: postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/${{ secrets.DB_DATABASE }}
 
     steps:
       - name: Print Environment Variables for Debugging
@@ -78,14 +64,39 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # 5. Wait for PostgreSQL to be ready
+      # 5. Install PostgreSQL
+      - name: Install PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+
+      # 6. Start PostgreSQL service
+      - name: Start PostgreSQL
+        run: |
+          sudo service postgresql start
+
+      - name: Change Working Directory
+        run: cd /tmp
+
+      # 7. Configure PostgreSQL
+      - name: Configure PostgreSQL
+        run: |
+          sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+          sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;"
+          sudo -u postgres psql -c "CREATE DATABASE $DB_DATABASE OWNER $DB_USER;"
+          sudo -u postgres psql -d $DB_DATABASE -c "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USER;"
+
+          sudo service postgresql restart
+
+      # 8. Wait for PostgreSQL to be ready
       - name: Wait for PostgreSQL to be Ready
         run: |
-          until pg_isready -h localhost -p 5432 -U $DB_USER -d $DB_DATABASE; do
-            echo "Waiting for PostgreSQL to be ready..."
+          for i in {1..5}; do
+            sudo -u postgres psql "postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_DATABASE" -c '\q' 2>/dev/null && break
+            echo "Waiting for PostgreSQL as clouduser..."
             sleep 5
           done
 
-      # 6. Run integration tests
+      # 9. Run Integration Tests
       - name: Run Integration Tests
-        run: npm test
+        run: npm run test
