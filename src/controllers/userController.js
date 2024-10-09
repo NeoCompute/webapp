@@ -78,3 +78,5 @@ module.exports = {
   updateUserInfo,
   createUserInfo,
 };
+
+// triggering status checks
