@@ -1,18 +1,17 @@
-name: PR Integration Tests
+name: PR Status Checks
 
-# Trigger workflow on pull requests to the main branch
 on:
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened]
 
 jobs:
-  test:
-    # Set the environment to run on Ubuntu latest
+  integration-tests:
     runs-on: ubuntu-latest
 
     env:
-      # Use secrets from GitHub Secrets
+      # Environment variables sourced from GitHub Secrets
       PORT: ${{ secrets.PORT }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PORT: ${{ secrets.DB_PORT }}
@@ -24,51 +23,48 @@ jobs:
       DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
       DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
       BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
+      DATABASE_URL: postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/${{ secrets.DB_DATABASE }}
 
     steps:
-      # Step 1: Checkout the code
-      - name: Checkout code
-        uses: actions/checkout@v2
+      # Step 1: Print environment variables for debugging (optional)
+      - name: Print Environment Variables for Debugging
+        run: |
+          echo "-----------------------------"
+          echo "Environment Variables:"
+          echo "PORT: $PORT"
+          echo "DB_HOST: $DB_HOST"
+          echo "DB_PORT: $DB_PORT"
+          echo "DB_USER: $DB_USER"
+          echo "DB_DATABASE: $DB_DATABASE"
+          echo "DB_POOL_MAX: $DB_POOL_MAX"
+          echo "DB_POOL_MIN: $DB_POOL_MIN"
+          echo "DB_POOL_ACQUIRE: $DB_POOL_ACQUIRE"
+          echo "DB_POOL_IDLE: $DB_POOL_IDLE"
+          echo "-----------------------------"
 
-      # Step 2: Set up Node.js environment
+      # Step 2: Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 3: Set up Node.js environment
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "22"
 
-      # Step 3: Cache Node.js dependencies to speed up workflow
+      # Step 4: Cache Node.js dependencies to speed up workflow
       - name: Cache Node.js modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      # Step 4: Install project dependencies
-      - name: Install dependencies
+      # Step 5: Install project dependencies
+      - name: Install Dependencies
         run: npm install
 
-      # Step 5: Install PostgreSQL and start the service
-      - name: Install PostgreSQL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql postgresql-contrib
-          sudo systemctl start postgresql
-          sudo systemctl enable postgresql
-
-      # Step 6: Configure PostgreSQL (create user, DB, and grant permissions)
-      - name: Configure PostgreSQL
-        run: |
-          sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
-          sudo -u postgres psql -c "CREATE DATABASE $DB_DATABASE;"
-          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USER;"
-          sudo systemctl restart postgresql
-
-      # Step 7: Run Tests (Integration/Unit Tests)
-      - name: Run tests
-        run: npm test
-
-      # Step 8: Ensure Status Check
-      - name: Status Check
-        run: echo "All checks passed"
+      # Step 6: Run tests (integration and unit tests)
+      - name: Run Integration Tests
+        run: npm run test
