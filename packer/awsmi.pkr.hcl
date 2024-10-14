@@ -54,10 +54,10 @@ build {
 
   provisioner "shell" {
     scripts = [
-        "./resources/scripts/update_os.sh",
-        "./resources/scripts/setup_node_db.sh",
-        "./resources/scripts/clone_source.sh",
-        "./resources/scripts/setup_db.sh"
+      "./resources/scripts/update_os.sh",
+      "./resources/scripts/setup_node_db.sh",
+      "./resources/scripts/clone_source.sh",
+      "./resources/scripts/setup_db.sh"
     ]
   }
 }
