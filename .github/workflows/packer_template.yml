@@ -1,0 +1,33 @@
+name: Packer Template Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-packer:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install Packer
+      - name: Install Packer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y packer
+
+      # Step 3: Initialize Packer (packer init)
+      - name: Packer Init
+        run: packer init ./packer
+
+      # Step 4: Run Packer Format Check (packer fmt)
+      - name: Packer Format
+        run: packer fmt -check -diff ./packer
+
+      # Step 5: Validate the Packer Template (packer validate)
+      - name: Packer Validate
+        run: packer validate ./packer
