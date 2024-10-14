@@ -17,4 +17,3 @@ const healthCheck = async (req, res) => {
 
 module.exports = { healthCheck };
 
-// Checking workflow
