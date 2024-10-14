@@ -10,25 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Install Packer
       - name: Install Packer
         run: |
           sudo apt-get update
           sudo apt-get install -y packer
 
-      # Step 3: Run packer fmt
-      # If packer fmt modifies any files, the workflow will fail
-      - name: Run packer fmt
-        id: packer_fmt
-        run: |
-          packer fmt -check -diff .
-
-      # Step 4: Run packer validate
-      # If packer validate fails, the workflow will fail
-      - name: Run packer validate
-        run: |
-          packer validate .
+      - name: Zip webapp file
+        run: cd ../ && zip -r webapp.zip webapp && cd - && cp ../webapp.zip .
+  
+      - name: Packer Init
+        run: packer init ./packer
+  
+      - name: Packer Format
+        run: packer fmt -check ./packer
+  
+      - name: Packer Validate
+        run: packer validate ./packer
