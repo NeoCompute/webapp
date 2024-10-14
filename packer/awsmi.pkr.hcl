@@ -1,13 +1,19 @@
 variable "aws_profile" {
-  type = string
+  type        = string
+  description = "AWS profile to use for the AWS provider"
+  default     = "dev"
 }
 
 variable "vpc_default" {
-  type = string
+  type        = string
+  description = "Default VPC to use for the AWS provider"
+  default     = ""
 }
 
 variable "subnet_default" {
-  type = string
+  type        = string
+  description = "Default subnet to use for the AWS provider"
+  default     = ""
 }
 
 packer {
