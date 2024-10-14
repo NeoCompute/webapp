@@ -53,18 +53,11 @@ build {
   sources = ["source.amazon-ebs.webapp"]
 
   provisioner "shell" {
-    script = "./scripts/update_os.sh"
-  }
-
-  provisioner "shell" {
-    script = "./scripts/setup_node_db.sh"
-  }
-
-  provisioner "shell" {
-    script = "./scripts/clone_source.sh"
-  }
-
-  provisioner "shell" {
-    script = "./scripts/setup_db.sh"
+    scripts = [
+        "./resources/scripts/update_os.sh",
+        "./resources/scripts/setup_node_db.sh",
+        "./resources/scripts/clone_source.sh",
+        "./resources/scripts/setup_db.sh"
+    ]
   }
 }
