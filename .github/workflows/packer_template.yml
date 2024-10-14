@@ -10,22 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step 2: Install Packer
       - name: Install Packer
         run: |
           sudo apt-get update
           sudo apt-get install -y packer
 
-      - name: Zip webapp file
-        run: cd ../ && zip -r webapp.zip webapp && cd - && cp ../webapp.zip .
-  
+      # Step 3: Initialize Packer (packer init)
       - name: Packer Init
         run: packer init ./packer
-  
+
+      # Step 4: Run Packer Format Check (packer fmt)
       - name: Packer Format
         run: packer fmt -check ./packer
-  
+
+      # Step 5: Validate the Packer Template (packer validate)
       - name: Packer Validate
-        run: packer validate ./packer
+        run: packer validate ./packer/awsmi.pkr.hcl
