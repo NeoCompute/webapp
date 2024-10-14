@@ -26,7 +26,7 @@ jobs:
 
       # Step 4: Run Packer Format Check (packer fmt)
       - name: Packer Format
-        run: packer fmt -check ./packer
+        run: packer fmt -check -diff ./packer
 
       # Step 5: Validate the Packer Template (packer validate)
       - name: Packer Validate

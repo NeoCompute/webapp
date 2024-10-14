@@ -1,13 +1,13 @@
 variable "aws_profile" {
-  type    = string
+  type = string
 }
 
 variable "vpc_default" {
-  type    = string
+  type = string
 }
 
 variable "subnet_default" {
-  type    = string
+  type = string
 }
 
 packer {
