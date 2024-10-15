@@ -1,0 +1,170 @@
+name: Packer Build
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+jobs:
+  packer_build:
+    runs-on: ubuntu-latest
+
+    env:
+      PORT: ${{ secrets.PORT }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_DATABASE: ${{ secrets.DB_DATABASE }}
+      DB_POOL_MAX: ${{ secrets.DB_POOL_MAX }}
+      DB_POOL_MIN: ${{ secrets.DB_POOL_MIN }}
+      DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
+      DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
+      BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Install PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+
+      - name: Setup PostgreSQL
+        env:
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          set -e
+
+          sudo systemctl enable postgresql.service
+          sudo systemctl start postgresql.service
+
+          echo "Verifying if the postgresql service is active"
+          sudo systemctl is-active --quiet postgresql.service || exit 1
+
+          echo "Creating user... '$DB_USER'"
+          sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+
+          echo "Granting user... '$DB_USER' the ability to create databases"
+          sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;"
+
+          echo "Creating database... '$DB_DATABASE'"
+          sudo -u postgres psql -c "CREATE DATABASE $DB_DATABASE OWNER $DB_USER;"
+
+          echo "Granting all privileges on database... '$DB_DATABASE' to user... '$DB_USER'"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USER;"
+
+      - name: Create .env File
+        env:
+          PORT: ${{ secrets.PORT }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_POOL_MAX: ${{ secrets.DB_POOL_MAX }}
+          DB_POOL_MIN: ${{ secrets.DB_POOL_MIN }}
+          DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
+          DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
+          BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
+        run: |
+          cat <<EOF > .env
+          PORT=$PORT
+          DB_HOST=$DB_HOST
+          DB_PORT=$DB_PORT
+          DB_USER=$DB_USER
+          DB_PASSWORD=$DB_PASSWORD
+          DB_DATABASE=$DB_DATABASE
+          DB_POOL_MAX=$DB_POOL_MAX
+          DB_POOL_MIN=$DB_POOL_MIN
+          DB_POOL_ACQUIRE=$DB_POOL_ACQUIRE
+          DB_POOL_IDLE=$DB_POOL_IDLE
+          BCRYPT_SALT_ROUNDS=$BCRYPT_SALT_ROUNDS
+          EOF
+          cat .env
+
+      - name: Run Integration Tests
+        run: npm run test
+
+      - name: Delete node_modules
+        run: rm -rf node_modules
+
+      - name: Zip Application Code
+        run: |
+          zip -r webapp.zip . \
+            -x "*.git*" "*.github*" "node_modules/*"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Verify AWS CLI Configuration
+        run: aws sts get-caller-identity
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v2
+        with:
+          version: "1.10.1"
+
+      - name: Packer Init
+        run: packer init ./packer
+
+      - name: Packer Format
+        run: packer fmt -check ./packer
+
+      - name: Packer Validate
+        run: packer validate ./packer
+
+      - name: Get Application Version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Parse Version
+        id: parse_version
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          echo "MAJOR=$MAJOR" >> $GITHUB_OUTPUT
+          echo "MINOR=$MINOR" >> $GITHUB_OUTPUT
+          echo "PATCH=$PATCH" >> $GITHUB_OUTPUT
+
+      - name: Create Timestamp
+        id: create_timestamp
+        run: |
+          TIMESTAMP=$(date +%s)
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
+
+      - name: Create Image Name
+        id: create_image_name
+        run: |
+          IMAGE_NAME="webapp-v${{ steps.parse_version.outputs.MAJOR }}.${{ steps.parse_version.outputs.MINOR }}.${{ steps.parse_version.outputs.PATCH }}-${{ steps.create_timestamp.outputs.TIMESTAMP }}"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Packer Build
+        run: |
+          packer build \
+          -var 'artifact_path=webapp.zip' \
+          -var 'ami_name=${{ steps.create_image_name.outputs.IMAGE_NAME }}' \
+          -var 'instance_type=${{ secrets.INSTANCE_TYPE }}' \
+          -var 'region=${{ secrets.AWS_DEFAULT_REGION }}' \
+          -var 'db_user=${{ secrets.DB_USER }}' \
+          -var 'db_password=${{ secrets.DB_PASSWORD }}' \
+          -var 'db_name=${{ secrets.DB_DATABASE }}' \
+          ./packer

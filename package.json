@@ -1,7 +1,7 @@
 {
-  "name": "webappfork",
+  "name": "webapp",
   "version": "1.0.0",
-  "description": "",
+  "description": "webapp for CSYE 6225 Course",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -20,6 +20,7 @@
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.3",
+    "webpack": "^5.95.0",
     "winston": "^3.14.2"
   },
   "devDependencies": {
