@@ -30,7 +30,7 @@ jobs:
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: "22.x"
 
       - name: Install Dependencies
         run: npm install
@@ -46,13 +46,25 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          sudo systemctl restart postgresql.service
-          sudo -u postgres psql -c \
-            "CREATE DATABASE $DB_DATABASE;"
-          sudo -u postgres psql -c \
-            "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
-          sudo -u postgres psql -c \
-            "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USER;"
+          set -e
+
+          sudo systemctl enable postgresql.service
+          sudo systemctl start postgresql.service
+
+          echo "Verifying if the postgresql service is active"
+          sudo systemctl is-active --quiet postgresql.service || exit 1
+
+          echo "Creating user... '$DB_USER'"
+          sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+
+          echo "Granting user... '$DB_USER' the ability to create databases"
+          sudo -u postgres psql -c "ALTER USER $DB_USER CREATEDB;"
+
+          echo "Creating database... '$DB_DATABASE'"
+          sudo -u postgres psql -c "CREATE DATABASE $DB_DATABASE OWNER $DB_USER;"
+
+          echo "Granting all privileges on database... '$DB_DATABASE' to user... '$DB_USER'"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USER;"
 
       - name: Create .env File
         env:
@@ -84,7 +96,7 @@ jobs:
           cat .env
 
       - name: Run Integration Tests
-        run: npm test
+        run: npm run test
 
       - name: Delete node_modules
         run: rm -rf node_modules
@@ -107,7 +119,7 @@ jobs:
       - name: Setup Packer
         uses: hashicorp/setup-packer@v2
         with:
-          version: '1.10.1'
+          version: "1.10.1"
 
       - name: Packer Init
         run: packer init ./packer
@@ -118,6 +130,21 @@ jobs:
       - name: Packer Validate
         run: packer validate ./packer
 
+      - name: Get Application Version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Parse Version
+        id: parse_version
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          echo "MAJOR=$MAJOR" >> $GITHUB_OUTPUT
+          echo "MINOR=$MINOR" >> $GITHUB_OUTPUT
+          echo "PATCH=$PATCH" >> $GITHUB_OUTPUT
+
       - name: Create Timestamp
         id: create_timestamp
         run: |
@@ -127,20 +154,17 @@ jobs:
       - name: Create Image Name
         id: create_image_name
         run: |
-          IMAGE_NAME="${{ secrets.IMAGE_NAME_HEADER }}-\
-          ${{ steps.create_timestamp.outputs.TIMESTAMP }}"
+          IMAGE_NAME="webapp-v${{ steps.parse_version.outputs.MAJOR }}.${{ steps.parse_version.outputs.MINOR }}.${{ steps.parse_version.outputs.PATCH }}-${{ steps.create_timestamp.outputs.TIMESTAMP }}"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
 
       - name: Packer Build
         run: |
           packer build \
-            -var 'database_name=${{ secrets.DB_DATABASE }}' \
-            -var 'database_user=${{ secrets.DB_USER }}' \
-            -var 'database_password=\
-            ${{ secrets.DB_PASSWORD }}' \
-            -var 'instance_type=${{ secrets.INSTANCE_TYPE }}' \
-            -var 'region=${{ secrets.AWS_DEFAULT_REGION }}' \
-            -var 'ami_name=\
-            ${{ steps.create_image_name.outputs.IMAGE_NAME }}' \
-            -var 'artifact_path=webapp.zip' \
-            ./packer
+          -var 'artifact_path=webapp.zip' \
+          -var 'ami_name=${{ steps.create_image_name.outputs.IMAGE_NAME }}' \
+          -var 'instance_type=${{ secrets.INSTANCE_TYPE }}' \
+          -var 'region=${{ secrets.AWS_DEFAULT_REGION }}' \
+          -var 'db_user=${{ secrets.DB_USER }}' \
+          -var 'db_password=${{ secrets.DB_PASSWORD }}' \
+          -var 'db_name=${{ secrets.DB_DATABASE }}' \
+          ./packer

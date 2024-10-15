@@ -40,24 +40,24 @@ variable "region" {
   default     = "us-east-1"
 }
 
-variable "database_name" {
+variable "db_user" {
   type        = string
-  description = "Database name"
-  default     = ""
+  description = "PostgreSQL database user"
+  default     = "clouduser"
 }
 
-variable "database_user" {
+variable "db_password" {
   type        = string
-  description = "Database user"
-  default     = ""
+  description = "PostgreSQL database password"
+  default     = "cloud@12345"
+  sensitive   = true
 }
 
-variable "database_password" {
+variable "db_name" {
   type        = string
-  description = "Database password"
-  default     = ""
+  description = "PostgreSQL database name"
+  default     = "clouddb"
 }
-
 
 packer {
   required_plugins {
@@ -106,7 +106,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo groupadd csye6225",
-      "sudo useradd -g csye6225 -s /usr/sbin/nologin csye6225"
+      "sudo useradd -m -g csye6225 -s /usr/sbin/nologin csye6225"
     ]
   }
 
@@ -117,41 +117,46 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo mkdir -p /home/csye6225/webapp",
-
-      "sudo unzip /tmp/webapp.zip -d /home/csye6225/webapp",
-
-      "sudo chown -R csye6225:csye6225 /home/csye6225/webapp",
-
       "curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -",
       "sudo apt-get install -y nodejs",
+      "node -v",
+      "npm -v"
+    ]
+  }
+  provisioner "shell" {
+    inline = [
+      "sudo apt-get install -y postgresql postgresql-contrib",
+      "sudo systemctl enable postgresql",
+      "sudo systemctl start postgresql",
+      "sudo systemctl status postgresql",
 
-      "cd /home/csye6225/webapp && sudo -u csye6225 npm install --only=production"
+      "sudo -u postgres psql -c \"CREATE USER ${var.db_user} WITH PASSWORD '${var.db_password}';\"",
+      "sudo -u postgres psql -c \"ALTER USER ${var.db_user} CREATEDB;\"",
+      "sudo -u postgres psql -c \"CREATE DATABASE ${var.db_name} OWNER ${var.db_user};\"",
+      "sudo -u postgres psql -d ${var.db_name} -c \"GRANT ALL PRIVILEGES ON DATABASE ${var.db_name} TO ${var.db_user};\""
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo apt-get install -y unzip",
+      "sudo mkdir -p /home/csye6225/webapp",
+      "sudo unzip /tmp/webapp.zip -d /home/csye6225/webapp",
+      "sudo chown -R csye6225:csye6225 /home/csye6225/webapp",
+      "cd /home/csye6225/webapp && sudo -u csye6225 npm install"
     ]
   }
 
   provisioner "shell" {
     inline = [
       "sudo cp /home/csye6225/webapp/webapp_service.service /etc/systemd/system/",
-
       "sudo systemctl daemon-reload",
+      "sudo systemctl enable webapp_service.service",
+      "sudo systemctl start webapp_service.service"
 
-      "sudo systemctl enable webapp_service.service"
     ]
   }
 }
 
 
-// build {
-//   sources = ["source.amazon-ebs.webapp"]
-
-//   provisioner "shell" {
-//     scripts = [
-//       "./resources/scripts/update_os.sh",
-//       "./resources/scripts/setup_node_db.sh",
-//       "./resources/scripts/clone_source.sh",
-//       "./resources/scripts/setup_db.sh"
-//     ]
-//   }
-// }
 

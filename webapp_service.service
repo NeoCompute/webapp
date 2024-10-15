@@ -1,5 +1,6 @@
 [Unit]
 Description=Node.js Application Service
+After=network.target
 
 [Service]
 User=csye6225
