@@ -1,0 +1,146 @@
+name: Packer Build
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+jobs:
+  packer_build:
+    runs-on: ubuntu-latest
+
+    env:
+      PORT: ${{ secrets.PORT }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_DATABASE: ${{ secrets.DB_DATABASE }}
+      DB_POOL_MAX: ${{ secrets.DB_POOL_MAX }}
+      DB_POOL_MIN: ${{ secrets.DB_POOL_MIN }}
+      DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
+      DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
+      BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Install PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+
+      - name: Setup PostgreSQL
+        env:
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          sudo systemctl restart postgresql.service
+          sudo -u postgres psql -c \
+            "CREATE DATABASE $DB_DATABASE;"
+          sudo -u postgres psql -c \
+            "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
+          sudo -u postgres psql -c \
+            "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USER;"
+
+      - name: Create .env File
+        env:
+          PORT: ${{ secrets.PORT }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_POOL_MAX: ${{ secrets.DB_POOL_MAX }}
+          DB_POOL_MIN: ${{ secrets.DB_POOL_MIN }}
+          DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
+          DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
+          BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
+        run: |
+          cat <<EOF > .env
+          PORT=$PORT
+          DB_HOST=$DB_HOST
+          DB_PORT=$DB_PORT
+          DB_USER=$DB_USER
+          DB_PASSWORD=$DB_PASSWORD
+          DB_DATABASE=$DB_DATABASE
+          DB_POOL_MAX=$DB_POOL_MAX
+          DB_POOL_MIN=$DB_POOL_MIN
+          DB_POOL_ACQUIRE=$DB_POOL_ACQUIRE
+          DB_POOL_IDLE=$DB_POOL_IDLE
+          BCRYPT_SALT_ROUNDS=$BCRYPT_SALT_ROUNDS
+          EOF
+          cat .env
+
+      - name: Run Integration Tests
+        run: npm test
+
+      - name: Delete node_modules
+        run: rm -rf node_modules
+
+      - name: Zip Application Code
+        run: |
+          zip -r webapp.zip . \
+            -x "*.git*" "*.github*" "node_modules/*"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Verify AWS CLI Configuration
+        run: aws sts get-caller-identity
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v2
+        with:
+          version: '1.10.1'
+
+      - name: Packer Init
+        run: packer init ./packer
+
+      - name: Packer Format
+        run: packer fmt -check ./packer
+
+      - name: Packer Validate
+        run: packer validate ./packer
+
+      - name: Create Timestamp
+        id: create_timestamp
+        run: |
+          TIMESTAMP=$(date +%s)
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
+
+      - name: Create Image Name
+        id: create_image_name
+        run: |
+          IMAGE_NAME="${{ secrets.IMAGE_NAME_HEADER }}-\
+          ${{ steps.create_timestamp.outputs.TIMESTAMP }}"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Packer Build
+        run: |
+          packer build \
+            -var 'database_name=${{ secrets.DB_DATABASE }}' \
+            -var 'database_user=${{ secrets.DB_USER }}' \
+            -var 'database_password=\
+            ${{ secrets.DB_PASSWORD }}' \
+            -var 'instance_type=${{ secrets.INSTANCE_TYPE }}' \
+            -var 'region=${{ secrets.AWS_DEFAULT_REGION }}' \
+            -var 'ami_name=\
+            ${{ steps.create_image_name.outputs.IMAGE_NAME }}' \
+            -var 'artifact_path=webapp.zip' \
+            ./packer

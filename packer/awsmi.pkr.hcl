@@ -16,6 +16,49 @@ variable "subnet_default" {
   default     = ""
 }
 
+variable "artifact_path" {
+  type        = string
+  description = "Path to the application artifact (zip file)"
+  default     = ""
+}
+
+variable "ami_name" {
+  type        = string
+  description = "Name of the AMI to create"
+  default     = "webapp-ami-{{timestamp}}"
+}
+
+variable "instance_type" {
+  type        = string
+  description = "Instance type for building the AMI"
+  default     = "t2.micro"
+}
+
+variable "region" {
+  type        = string
+  description = "AWS region"
+  default     = "us-east-1"
+}
+
+variable "database_name" {
+  type        = string
+  description = "Database name"
+  default     = ""
+}
+
+variable "database_user" {
+  type        = string
+  description = "Database user"
+  default     = ""
+}
+
+variable "database_password" {
+  type        = string
+  description = "Database password"
+  default     = ""
+}
+
+
 packer {
   required_plugins {
     amazon = {
@@ -26,9 +69,10 @@ packer {
 }
 
 source "amazon-ebs" "webapp" {
-  ami_name      = "webapp-{{timestamp}}"
-  instance_type = "t2.medium"
-  region        = "us-east-1"
+  ami_name      = var.ami_name
+  instance_type = var.instance_type
+  region        = var.region
+
   source_ami_filter {
     filters = {
       name                = "ubuntu/images/*ubuntu-jammy-22.04-amd64-server-*"
@@ -53,11 +97,61 @@ build {
   sources = ["source.amazon-ebs.webapp"]
 
   provisioner "shell" {
-    scripts = [
-      "./resources/scripts/update_os.sh",
-      "./resources/scripts/setup_node_db.sh",
-      "./resources/scripts/clone_source.sh",
-      "./resources/scripts/setup_db.sh"
+    inline = [
+      "sudo apt-get update -y",
+      "sudo apt-get upgrade -y"
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo groupadd csye6225",
+      "sudo useradd -g csye6225 -s /usr/sbin/nologin csye6225"
+    ]
+  }
+
+  provisioner "file" {
+    source      = var.artifact_path
+    destination = "/tmp/webapp.zip"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo mkdir -p /home/csye6225/webapp",
+
+      "sudo unzip /tmp/webapp.zip -d /home/csye6225/webapp",
+
+      "sudo chown -R csye6225:csye6225 /home/csye6225/webapp",
+
+      "curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -",
+      "sudo apt-get install -y nodejs",
+
+      "cd /home/csye6225/webapp && sudo -u csye6225 npm install --only=production"
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo cp /home/csye6225/webapp/webapp_service.service /etc/systemd/system/",
+
+      "sudo systemctl daemon-reload",
+
+      "sudo systemctl enable webapp_service.service"
     ]
   }
 }
+
+
+// build {
+//   sources = ["source.amazon-ebs.webapp"]
+
+//   provisioner "shell" {
+//     scripts = [
+//       "./resources/scripts/update_os.sh",
+//       "./resources/scripts/setup_node_db.sh",
+//       "./resources/scripts/clone_source.sh",
+//       "./resources/scripts/setup_db.sh"
+//     ]
+//   }
+// }
+

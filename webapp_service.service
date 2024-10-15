@@ -1,0 +1,13 @@
+[Unit]
+Description=Node.js Application Service
+
+[Service]
+User=csye6225
+Group=csye6225
+WorkingDirectory=/home/csye6225/webapp
+ExecStart=/usr/bin/node /home/csye6225/webapp/src/server.js
+Restart=always
+EnvironmentFile=/home/csye6225/webapp/.env
+
+[Install]
+WantedBy=multi-user.target

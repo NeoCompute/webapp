@@ -1,4 +1,4 @@
-name: Packer Template Checks
+name: Packer Validate
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  check-packer:
+  validate-packer:
     runs-on: ubuntu-latest
 
     steps:
