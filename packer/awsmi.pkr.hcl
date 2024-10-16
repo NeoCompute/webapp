@@ -104,16 +104,6 @@ build {
     ]
   }
 
-  provisioner "shell" {
-    inline = [
-      "set -ex",
-      "sudo groupadd csye6225",
-      "echo 'group created'",
-      "sudo useradd -m -g csye6225 -s /usr/sbin/nologin csye6225",
-      "echo 'user and group created'",
-    ]
-  }
-
   provisioner "file" {
     source      = var.artifact_path
     destination = "/tmp/webapp.zip"
@@ -146,17 +136,40 @@ build {
     ]
   }
 
+
+  provisioner "shell" {
+    inline = [
+      "set -ex",
+      "sudo groupadd csye6225",
+      "echo 'group created'",
+      "sudo useradd -m -g csye6225 -s /usr/sbin/nologin csye6225",
+      "echo 'user and group created'",
+    ]
+  }
+
+  //   provisioner "shell" {
+  //     inline = [
+  //       "set -ex",
+  //       "sudo groupadd -f csye6225",
+  //       "echo 'group created'",
+  //       "sudo useradd -s /usr/sbin/nologin -g csye6225 -d /opt/csye6225 -m csye6225",
+  //       "echo 'user and group created'",
+  //     ]
+  //   }
+
   provisioner "shell" {
     inline = [
       "set -ex",
       "sudo apt-get install -y unzip",
       "sudo mkdir -p /home/csye6225/webapp",
       "echo 'Directory Created'",
-      "sudo unzip /tmp/webapp.zip -d /home/csye6225/webapp",
+      "sudo unzip /tmp/webapp.zip -d /home/csye6225/",
       "echo 'Unzipped successfully'",
-      "sudo chown -R csye6225:csye6225 /home/csye6225/webapp",
+      "sudo chown -R csye6225:csye6225 /home/csye6225/",
       "echo 'Ownership changed'",
-      "cd /home/csye6225/webapp && sudo -u csye6225 npm install",
+      "sudo chmod -R 775 /home/csye6225/",
+      "cd /home/csye6225/webapp",
+      "sudo npm install",
       "echo 'npm installed'",
     ]
   }
@@ -165,9 +178,15 @@ build {
     inline = [
       "set -ex",
       "sudo cp /home/csye6225/webapp/webapp_service.service /etc/systemd/system/",
+      "sudo chown csye6225:csye6225 /etc/systemd/system/webapp_service.service",
+      "sudo chmod 750 /etc/systemd/system/webapp_service.service",
+      "sudo chown -R csye6225:csye6225 /home/csye6225/",
+      "sudo chmod -R 750 /home/csye6225/webapp",
       "sudo systemctl daemon-reload",
       "sudo systemctl enable webapp_service.service",
-      "sudo systemctl start webapp_service.service"
+      "sudo systemctl start webapp_service.service",
+      "sudo systemctl status webapp_service.service",
+      "sudo systemctl daemon-reload"
     ]
   }
 }
