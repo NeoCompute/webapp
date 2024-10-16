@@ -19,3 +19,6 @@ db_user     = "clouduser"
 db_password = "cloud@12345" # Consider handling this securely
 db_name     = "clouddb"
 
+source_ami_id   = "ami-0866a3c8686eaeeba"
+demo_account_id = "396608768117"
+
