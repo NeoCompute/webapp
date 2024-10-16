@@ -96,100 +96,27 @@ source "amazon-ebs" "webapp" {
 build {
   sources = ["source.amazon-ebs.webapp"]
 
-  provisioner "shell" {
-    inline = [
-      "set -ex",
-      "sudo apt-get update -y",
-      "sudo apt-get upgrade -y"
-    ]
-  }
-
   provisioner "file" {
     source      = var.artifact_path
     destination = "/tmp/webapp.zip"
   }
 
   provisioner "shell" {
-    inline = [
-      "set -ex",
-      "curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -",
-      "sudo apt-get install -y nodejs",
-      "echo 'node Installed'",
-      "node -v",
-      "npm -v"
+    scripts = [
+      "./resources/scripts/update_os.sh",
+      "./resources/scripts/setup_node.sh",
+      "./resources/scripts/setup_postgres.sh",
+      "./resources/scripts/setup_db.sh",
+      "./resources/scripts/create_user_group.sh",
+      "./resources/scripts/handle_src_code.sh",
+      "./resources/scripts/configure_service.sh",
     ]
-  }
-  provisioner "shell" {
-    inline = [
-      "set -ex",
-      "cd /tmp", // This needs to be reverted back
-      "sudo apt-get install -y postgresql postgresql-contrib",
-      "echo 'postgres Installed'",
-      "sudo systemctl enable postgresql",
-      "sudo systemctl start postgresql",
-      "sudo systemctl status postgresql",
-
-      "sudo -u postgres psql -c \"CREATE USER ${var.db_user} WITH PASSWORD '${var.db_password}';\"",
-      "sudo -u postgres psql -c \"ALTER USER ${var.db_user} CREATEDB;\"",
-      "sudo -u postgres psql -c \"CREATE DATABASE ${var.db_name} OWNER ${var.db_user};\"",
-      "sudo -u postgres psql -d ${var.db_name} -c \"GRANT ALL PRIVILEGES ON DATABASE ${var.db_name} TO ${var.db_user};\""
+    environment_vars = [
+      "DATABASE_NAME=${var.db_name}",
+      "DATABASE_USER=${var.db_user}",
+      "DATABASE_PASSWORD=${var.db_password}"
     ]
   }
 
 
-  provisioner "shell" {
-    inline = [
-      "set -ex",
-      "sudo groupadd csye6225",
-      "echo 'group created'",
-      "sudo useradd -m -g csye6225 -s /usr/sbin/nologin csye6225",
-      "echo 'user and group created'",
-    ]
-  }
-
-  //   provisioner "shell" {
-  //     inline = [
-  //       "set -ex",
-  //       "sudo groupadd -f csye6225",
-  //       "echo 'group created'",
-  //       "sudo useradd -s /usr/sbin/nologin -g csye6225 -d /opt/csye6225 -m csye6225",
-  //       "echo 'user and group created'",
-  //     ]
-  //   }
-
-  provisioner "shell" {
-    inline = [
-      "set -ex",
-      "sudo apt-get install -y unzip",
-      "sudo mkdir -p /home/csye6225/webapp",
-      "echo 'Directory Created'",
-      "sudo unzip /tmp/webapp.zip -d /home/csye6225/",
-      "echo 'Unzipped successfully'",
-      "sudo chown -R csye6225:csye6225 /home/csye6225/",
-      "echo 'Ownership changed'",
-      "sudo chmod -R 775 /home/csye6225/",
-      "cd /home/csye6225/webapp",
-      "sudo npm install",
-      "echo 'npm installed'",
-    ]
-  }
-
-  provisioner "shell" {
-    inline = [
-      "set -ex",
-      "sudo cp /home/csye6225/webapp/webapp_service.service /etc/systemd/system/",
-      "sudo chown csye6225:csye6225 /etc/systemd/system/webapp_service.service",
-      "sudo chmod 750 /etc/systemd/system/webapp_service.service",
-      "sudo chown -R csye6225:csye6225 /home/csye6225/",
-      "sudo chmod -R 750 /home/csye6225/webapp",
-      "sudo systemctl daemon-reload",
-      "sudo systemctl enable webapp_service.service",
-      "sudo systemctl start webapp_service.service",
-      "sudo systemctl status webapp_service.service",
-      "sudo systemctl daemon-reload"
-    ]
-  }
 }
-
-
-
