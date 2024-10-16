@@ -169,4 +169,6 @@ jobs:
           -var 'db_name=${{ secrets.DB_DATABASE }}' \
           -var 'source_ami_id=${{ secrets.AWS_SOURCE_AMI_ID }}' \
           -var 'demo_account_id=${{ secrets.AWS_DEMO_ACCOUNT_ID }}' \
+          -var 'vpc_to_use=${{ secrets.VPC_AMI }}' \
+          -var 'subnet_to_use=${{ secrets.SUBNET_AMI }}' \
           ./packer

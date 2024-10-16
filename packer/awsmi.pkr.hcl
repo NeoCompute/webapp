@@ -4,15 +4,15 @@ variable "aws_profile" {
   default     = "dev"
 }
 
-variable "vpc_default" {
+variable "vpc_to_use" {
   type        = string
-  description = "Default VPC to use for the AWS provider"
+  description = "VPC to use for the AWS provider"
   default     = ""
 }
 
-variable "subnet_default" {
+variable "subnet_to_use" {
   type        = string
-  description = "Default subnet to use for the AWS provider"
+  description = "subnet to use for the AWS provider"
   default     = ""
 }
 
@@ -87,8 +87,8 @@ source "amazon-ebs" "webapp" {
 
   source_ami = var.source_ami_id
 
-  vpc_id                      = var.vpc_default
-  subnet_id                   = var.subnet_default
+  vpc_id                      = var.vpc_to_use
+  subnet_id                   = var.subnet_to_use
   associate_public_ip_address = true
   ssh_username                = "ubuntu"
   profile                     = var.aws_profile
