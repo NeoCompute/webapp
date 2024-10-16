@@ -19,4 +19,3 @@ db_user     = "clouduser"
 db_password = "cloud@12345" # Consider handling this securely
 db_name     = "clouddb"
 
-demo_account_id = "396608768117"
