@@ -52,19 +52,20 @@ jobs:
         with:
           node-version: "22"
 
-      # Step 4: Cache Node.js dependencies to speed up workflow
-      - name: Cache Node.js modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+      # # Step 4: Cache Node.js dependencies to speed up workflow
+      # - name: Cache Node.js modules
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.npm
+      #     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-node-
 
-      # Step 5: Install project dependencies
+      # Step 4: Install project dependencies
       - name: Install Dependencies
         run: npm install
 
-      # Step 6: Run tests (integration and unit tests)
+      # Step 5: Run tests (integration and unit tests)
       - name: Run Integration Tests
         run: npm run test
+
