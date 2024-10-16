@@ -59,6 +59,12 @@ variable "db_name" {
   default     = "clouddb"
 }
 
+variable "demo_account_id" {
+  type        = string
+  description = "Demo AWS account ID"
+  default     = "396608768117"
+}
+
 packer {
   required_plugins {
     amazon = {
@@ -75,7 +81,7 @@ source "amazon-ebs" "webapp" {
 
   source_ami_filter {
     filters = {
-      name                = "ubuntu/images/*ubuntu-jammy-22.04-amd64-server-*"
+      name                = "ubuntu/images/*ubuntu-jammy-24.04-amd64-server-*"
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
@@ -88,6 +94,7 @@ source "amazon-ebs" "webapp" {
   associate_public_ip_address = true
   ssh_username                = "ubuntu"
   profile                     = var.aws_profile
+  ami_users                   = [var.demo_account_id]
 }
 
 build {
