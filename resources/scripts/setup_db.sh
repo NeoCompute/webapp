@@ -1,6 +1,8 @@
 #!/bin/bash
 
 set -ex
+cd /tmp
+
 
 sudo -u postgres psql -c "CREATE USER $DATABASE_USER WITH PASSWORD '$DATABASE_PASSWORD';"
 sudo -u postgres psql -c "ALTER USER $DATABASE_USER CREATEDB;"
