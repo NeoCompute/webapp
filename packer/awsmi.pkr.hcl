@@ -65,7 +65,7 @@ variable "demo_account_id" {
   default     = "396608768117"
 }
 
-variable "source_ami_id"{
+variable "source_ami_id" {
   type        = string
   description = "Source AMI ID"
   default     = "ami-0866a3c8686eaeeba"
