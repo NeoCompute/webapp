@@ -79,15 +79,17 @@ source "amazon-ebs" "webapp" {
   instance_type = var.instance_type
   region        = var.region
 
-  source_ami_filter {
-    filters = {
-      name                = "ubuntu/images/*ubuntu-jammy-24.04-amd64-server-*"
-      root-device-type    = "ebs"
-      virtualization-type = "hvm"
-    }
-    most_recent = true
-    owners      = ["099720109477"]
-  }
+  // source_ami_filter {
+  //   filters = {
+  //     name                = "ubuntu/images/*ubuntu-jammy-22.04-amd64-server-*"
+  //     root-device-type    = "ebs"
+  //     virtualization-type = "hvm"
+  //   }
+  //   most_recent = true
+  //   owners      = ["099720109477"]
+  // }
+
+  source_ami = "ami-0866a3c8686eaeeba"
 
   vpc_id                      = var.vpc_default
   subnet_id                   = var.subnet_default
