@@ -86,11 +86,8 @@ source "amazon-ebs" "webapp" {
   vpc_id                      = var.vpc_default
   subnet_id                   = var.subnet_default
   associate_public_ip_address = true
-
-  ssh_username = "ubuntu"
-  ami_users    = ["self"]
-
-  profile = var.aws_profile
+  ssh_username                = "ubuntu"
+  profile                     = var.aws_profile
 }
 
 build {
