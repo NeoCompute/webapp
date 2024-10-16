@@ -112,6 +112,7 @@ build {
       "./resources/scripts/create_user_group.sh",
       "./resources/scripts/handle_src_code.sh",
       "./resources/scripts/configure_service.sh",
+      "./resources/scripts/remove_unnecessary_packages.sh"
     ]
     environment_vars = [
       "DATABASE_NAME=${var.db_name}",
