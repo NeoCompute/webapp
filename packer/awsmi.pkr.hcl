@@ -98,6 +98,7 @@ build {
 
   provisioner "shell" {
     inline = [
+      "set -ex",
       "sudo apt-get update -y",
       "sudo apt-get upgrade -y"
     ]
@@ -105,8 +106,11 @@ build {
 
   provisioner "shell" {
     inline = [
+      "set -ex",
       "sudo groupadd csye6225",
-      "sudo useradd -m -g csye6225 -s /usr/sbin/nologin csye6225"
+      "echo 'group created'",
+      "sudo useradd -m -g csye6225 -s /usr/sbin/nologin csye6225",
+      "echo 'user and group created'",
     ]
   }
 
@@ -117,15 +121,20 @@ build {
 
   provisioner "shell" {
     inline = [
+      "set -ex",
       "curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -",
       "sudo apt-get install -y nodejs",
+      "echo 'node Installed'",
       "node -v",
       "npm -v"
     ]
   }
   provisioner "shell" {
     inline = [
+      "set -ex",
+      "cd /tmp", // This needs to be reverted back
       "sudo apt-get install -y postgresql postgresql-contrib",
+      "echo 'postgres Installed'",
       "sudo systemctl enable postgresql",
       "sudo systemctl start postgresql",
       "sudo systemctl status postgresql",
@@ -139,21 +148,26 @@ build {
 
   provisioner "shell" {
     inline = [
+      "set -ex",
       "sudo apt-get install -y unzip",
       "sudo mkdir -p /home/csye6225/webapp",
+      "echo 'Directory Created'",
       "sudo unzip /tmp/webapp.zip -d /home/csye6225/webapp",
+      "echo 'Unzipped successfully'",
       "sudo chown -R csye6225:csye6225 /home/csye6225/webapp",
-      "cd /home/csye6225/webapp && sudo -u csye6225 npm install"
+      "echo 'Ownership changed'",
+      "cd /home/csye6225/webapp && sudo -u csye6225 npm install",
+      "echo 'npm installed'",
     ]
   }
 
   provisioner "shell" {
     inline = [
+      "set -ex",
       "sudo cp /home/csye6225/webapp/webapp_service.service /etc/systemd/system/",
       "sudo systemctl daemon-reload",
       "sudo systemctl enable webapp_service.service",
       "sudo systemctl start webapp_service.service"
-
     ]
   }
 }
