@@ -8,6 +8,27 @@ Web application for CSYE 6225 (Network Structures & Cloud Computing)
 - Backend Framework: ```Node.js```, ```Express.js```
 - ORM Framework: ```Sequelize```
 
+### To run the packer build command
+
+Create ```variables.pkrvars.hcl``` file with the following fields:
+
+```bash
+aws_profile    = ""
+vpc_default    = ""
+subnet_default = ""
+artifact_path  = ""
+ami_name       = ""
+instance_type  = ""
+region         = ""
+
+db_user     = ""
+db_password = "" 
+db_name     = ""
+
+source_ami_id   = ""
+demo_account_id = ""
+```
+
 ### How to Build and run the application locally
 
 1. Generate npm packages
