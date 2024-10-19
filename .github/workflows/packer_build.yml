@@ -104,7 +104,7 @@ jobs:
       - name: Zip Application Code
         run: |
           zip -r webapp.zip . \
-            -x "*.git*" "*.github*" "node_modules/*"
+            -x "*.git*" "*.github*" "node_modules/*" ".env"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
