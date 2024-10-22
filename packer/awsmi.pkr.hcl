@@ -1,4 +1,4 @@
-variable "aws_profile" {
+          variable "aws_profile" {
   type        = string
   description = "AWS profile to use for the AWS provider"
   default     = "dev"
@@ -6,7 +6,7 @@ variable "aws_profile" {
 
 variable "vpc_to_use" {
   type        = string
-  description = "VPC to use for the AWS provider"
+   = "VPC to use for the AWS provider"
   default     = ""
 }
 
