@@ -40,25 +40,6 @@ variable "region" {
   default     = "us-east-1"
 }
 
-// variable "db_user" {
-//   type        = string
-//   description = "PostgreSQL database user"
-//   default     = "clouduser"
-// }
-
-// variable "db_password" {
-//   type        = string
-//   description = "PostgreSQL database password"
-//   default     = "cloud@12345"
-//   sensitive   = true
-// }
-
-// variable "db_name" {
-//   type        = string
-//   description = "PostgreSQL database name"
-//   default     = "clouddb"
-// }
-
 variable "demo_account_id" {
   type        = string
   description = "Demo AWS account ID"
@@ -107,19 +88,10 @@ build {
     scripts = [
       "./resources/scripts/update_os.sh",
       "./resources/scripts/setup_node.sh",
-      // "./resources/scripts/setup_postgres.sh",
-      // "./resources/scripts/setup_db.sh",
       "./resources/scripts/create_user_group.sh",
       "./resources/scripts/handle_src_code.sh",
       "./resources/scripts/configure_service.sh",
       "./resources/scripts/remove_unnecessary_packages.sh"
     ]
-    // environment_vars = [
-    //   "DATABASE_NAME=${var.db_name}",
-    //   "DATABASE_USER=${var.db_user}",
-    //   "DATABASE_PASSWORD=${var.db_password}"
-    // ]
   }
-
-
 }
