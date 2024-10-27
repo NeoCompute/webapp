@@ -89,6 +89,7 @@ build {
       "./resources/scripts/update_os.sh",
       "./resources/scripts/setup_node.sh",
       "./resources/scripts/create_user_group.sh",
+      "./resources/scripts/setup_cloudwatch.sh",
       "./resources/scripts/handle_src_code.sh",
       "./resources/scripts/configure_service.sh",
       "./resources/scripts/remove_unnecessary_packages.sh"
