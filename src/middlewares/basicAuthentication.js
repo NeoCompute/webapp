@@ -1,5 +1,6 @@
 const userRepository = require("../repositories/userRepository");
 const bcrypt = require("bcrypt");
+const logger = require("../utils/logger");
 
 const basicAuthentication = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
@@ -40,7 +41,7 @@ const basicAuthentication = async (req, res, next) => {
       req.user = user;
       return next(); // Authentication successful, proceed to the next middleware or controller
     } catch (error) {
-      console.error("Basic Authentication error:", error);
+      logger.error("Basic Authentication error:", error);
       return next(error);
     }
   } else if (scheme === "Bearer") {

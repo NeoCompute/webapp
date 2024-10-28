@@ -1,9 +1,16 @@
-// customErrors.js
+const logger = require("../utils/logger");
+
 class AppError extends Error {
   constructor(message, statusCode) {
     super(message);
     this.statusCode = statusCode;
-    this.isOperational = true; // Mark this as an operational error
+    this.isOperational = true;
+
+    logger.error(`AppError: ${message}`, {
+      statusCode,
+      stack: this.stack,
+    });
+
     Error.captureStackTrace(this, this.constructor);
   }
 }

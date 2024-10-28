@@ -22,6 +22,10 @@ jobs:
       DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
       DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
       BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
+      CLOUDWATCH_LOG_GROUP: ${{secrets.CLOUDWATCH_LOG_GROUP}}
+      CLOUDWATCH_LOG_STREAM: ${{secrets.CLOUDWATCH_LOG_STREAM}}
+      AWS_REGION: ${{secrets.AWS_REGION}}
+      ENVIRONMENT: ${{secrets.ENVIRONMENT}}
 
     steps:
       - name: Checkout code
@@ -79,6 +83,10 @@ jobs:
           DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
           DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
           BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
+          CLOUDWATCH_LOG_GROUP: ${{secrets.CLOUDWATCH_LOG_GROUP}}
+          CLOUDWATCH_LOG_STREAM: ${{secrets.CLOUDWATCH_LOG_STREAM}}
+          AWS_REGION: ${{secrets.AWS_REGION}}
+          ENVIRONMENT: ${{secrets.ENVIRONMENT}}
         run: |
           cat <<EOF > .env
           PORT=$PORT
@@ -92,6 +100,10 @@ jobs:
           DB_POOL_ACQUIRE=$DB_POOL_ACQUIRE
           DB_POOL_IDLE=$DB_POOL_IDLE
           BCRYPT_SALT_ROUNDS=$BCRYPT_SALT_ROUNDS
+          CLOUDWATCH_LOG_GROUP=$CLOUDWATCH_LOG_GROUP
+          CLOUDWATCH_LOG_STREAM=$CLOUDWATCH_LOG_STREAM
+          AWS_REGION=$AWS_REGION
+          ENVIRONMENT=$ENVIRONMENT
           EOF
           cat .env
 

@@ -4,6 +4,5 @@ module.exports = (req, res, next) => {
       error: "Unsupported Media Type. Content-Type must be application/json",
     });
   }
-
   next();
 };
