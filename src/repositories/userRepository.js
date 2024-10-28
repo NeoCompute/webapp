@@ -1,4 +1,5 @@
 const User = require("../models/user");
+
 const {
   ValidationError,
   UniqueConstraintError,
@@ -67,7 +68,6 @@ const createUser = async (userData) => {
     return newUser;
   } catch (error) {
     if (error instanceof ValidationError) {
-      console.log("error from repo layer: ", error.message);
       throw error;
     }
     throw new DatabaseError("Failed to create user");

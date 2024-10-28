@@ -4,6 +4,7 @@ const generateToken = require("../utils/tokenGenerator");
 const { ValidationError } = require("sequelize");
 const { DatabaseError, ValidateError } = require("../errors/customErrors");
 const validatePassword = require("../utils/validatePassword");
+const logger = require("../utils/logger");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -31,7 +32,8 @@ const createUser = async (userData) => {
     if (existingUser) {
       throw new ValidateError("A user with this email already exists.");
     }
-    console.log(saltRounds);
+    // console.log(saltRounds);
+    logger.info(saltRounds);
 
     const salt = await bcrypt.genSalt(saltRounds);
 
@@ -54,7 +56,7 @@ const createUser = async (userData) => {
   } catch (error) {
     console.error("Error in createUser:", error.message);
     if (error instanceof ValidationError || error instanceof ValidateError) {
-      console.log(error.message);
+      logger.error(error.message);
       throw error;
     }
     throw new DatabaseError("Error creating user.");
@@ -101,7 +103,7 @@ const updateUser = async (userId, updates) => {
 
     return updatedUser;
   } catch (error) {
-    console.error("Error in updateUser:", error);
+    logger.error("Error in UpdateUser: ", error);
     if (error instanceof ValidationError || error instanceof ValidateError) {
       throw error;
     }

@@ -1,9 +1,11 @@
 const userService = require("../services/userService");
 const omitFields = require("../utils/omitFields");
 const validateImmutableFields = require("../utils/validateImmutableFields");
+const logger = require("../utils/logger");
 
 const getUserInfo = async (req, res, next) => {
   try {
+    logger.info("Fetching user information", { userId: req.user.id });
     const user = req.user.toJSON();
     const safeUser = omitFields(user, [
       "password",
@@ -14,16 +16,16 @@ const getUserInfo = async (req, res, next) => {
     ]);
     res.status(200).json(safeUser);
   } catch (err) {
-    next(err); // Pass the error to the error handler middleware
+    logger.error("Error in getUserInfo", { error: err.message });
+    next(err);
   }
 };
 
 const createUserInfo = async (req, res, next) => {
   try {
     const { firstName, lastName, email, password } = req.body;
-
     validateImmutableFields(req.body, ["account_created", "account_updated"]);
-
+    logger.info("Creating new user");
     const user = await userService.createUser({
       firstName,
       lastName,
@@ -42,6 +44,7 @@ const createUserInfo = async (req, res, next) => {
 
     res.status(201).json(safeUser); // Return 201 if user is created successfully
   } catch (err) {
+    logger.error("error Creating new user");
     next(err);
   }
 };
@@ -51,6 +54,7 @@ const updateUserInfo = async (req, res, next) => {
   const updates = req.body;
 
   try {
+    logger.info("Updating user information", { userId: req.user.id });
     validateImmutableFields(req.body, [
       "account_created",
       "account_updated",
@@ -69,15 +73,9 @@ const updateUserInfo = async (req, res, next) => {
     const safeUser = omitFields(userObj, fieldsToOmit);
     res.status(200).json(safeUser);
   } catch (error) {
+    logger.error("Error in updateUserInfo", { error: error.message });
     next(error);
   }
 };
 
-module.exports = {
-  getUserInfo,
-  updateUserInfo,
-  createUserInfo,
-};
-
-// triggering status checks
-
+module.exports = { getUserInfo, updateUserInfo, createUserInfo };
