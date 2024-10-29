@@ -8,7 +8,7 @@ const router = express.Router();
 
 const multer = require("multer");
 
-// router.use("/user/self/pic", methodHandler(["POST", "GET", "DELETE"]));
+router.use("/user/self/pic", methodHandler(["POST", "GET", "DELETE"]));
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.post(
