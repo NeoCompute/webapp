@@ -12,7 +12,7 @@ async function performS3Action(action, params) {
     return result;
   } catch (error) {
     statsd.increment(`s3.${action}.error_count`);
-    throw throw new Error(`S3 ${action} operation failed: ${error.message}`);
+    throw new Error(`S3 ${action} operation failed: ${error.message}`);
   }
 }
 
