@@ -35,17 +35,16 @@ const dbConnection = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
     acquire: parseInt(DB_POOL_ACQUIRE, 10) || 30000,
     idle: parseInt(DB_POOL_IDLE, 10) || 10000,
   },
-  logging: (msg) => logger.debug(msg), // Log SQL queries with Winston
+  logging: (msg, executionTime) => {
+    logger.debug(msg);
+    if (executionTime) {
+      statsd.timing("db.query.response_time", executionTime);
+      logger.debug(`Query executed in ${executionTime} ms`);
+    }
+  },
 });
 
-dbConnection.addHook("beforeQuery", (options) => {
-  options.__startTime = Date.now();
-});
-
-dbConnection.addHook("afterQuery", (result, options) => {
-  const duration = Date.now() - options.__startTime;
-  statsd.timing("db.query.response_time", duration);
-});
+dbConnection.options.benchmark = true;
 
 const testDbConnection = async () => {
   try {

@@ -6,7 +6,12 @@ const logger = require("../utils/logger");
 
 const bucketName = process.env.S3_BUCKET_NAME;
 
-const uploadProfilePicture = async (userId, fileBuffer, fileExtension) => {
+const uploadProfilePicture = async (
+  userId,
+  fileBuffer,
+  fileExtension,
+  mimetype
+) => {
   const fileName = `${userId}/${uuidv4()}.${fileExtension}`;
   logger.info("Initiating profile picture upload", {
     userId,
@@ -15,7 +20,7 @@ const uploadProfilePicture = async (userId, fileBuffer, fileExtension) => {
   });
 
   try {
-    await uploadImage(fileBuffer, fileName, bucketName);
+    await uploadImage(fileBuffer, fileName, bucketName, mimetype);
     const imageUrl = getImageUrl(bucketName, fileName);
 
     const imageData = {
