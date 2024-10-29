@@ -7,7 +7,7 @@ const payloadChecker = require("../middlewares/payloadChecker");
 const router = express.Router();
 
 router.post("/user", validateJsonContentType, userController.createUserInfo);
-router.use("/user/self", methodHandler(["GET", "PUT"]));
+// router.use("/user/self", methodHandler(["GET", "PUT"]));
 
 // Protected Routes
 router.get(
