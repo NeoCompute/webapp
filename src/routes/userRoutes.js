@@ -6,18 +6,12 @@ const validateJsonContentType = require("../middlewares/validateJsonContentType"
 const payloadChecker = require("../middlewares/payloadChecker");
 const router = express.Router();
 
-router.post("/user", validateJsonContentType, userController.createUserInfo);
-// router.use("/user/self", methodHandler(["GET", "PUT"]));
-
+router.all("/self", methodHandler(["GET", "PUT"]));
+router.post("/", validateJsonContentType, userController.createUserInfo);
 // Protected Routes
-router.get(
-  "/user/self",
-  authenticate,
-  payloadChecker,
-  userController.getUserInfo
-);
+router.get("/self", authenticate, payloadChecker, userController.getUserInfo);
 router.put(
-  "/user/self",
+  "/self",
   authenticate,
   validateJsonContentType,
   userController.updateUserInfo

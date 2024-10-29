@@ -29,7 +29,7 @@ const uploadImage = async (fileContent, fileName, bucketName) => {
     Bucket: bucketName,
     Key: fileName,
     Body: fileContent,
-    ContentType: "image/jpeg", // Adjust as needed based on the actual image format
+    ContentType: "image/jpeg",
   };
   return performS3Action("upload", params);
 };

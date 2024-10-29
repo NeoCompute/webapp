@@ -7,27 +7,16 @@ const payloadChecker = require("../middlewares/payloadChecker");
 const router = express.Router();
 
 const multer = require("multer");
-
-router.use("/user/self/pic", methodHandler(["POST", "GET", "DELETE"]));
 const upload = multer({ storage: multer.memoryStorage() });
 
+router.all("/", methodHandler(["POST", "GET", "DELETE"]));
 router.post(
-  "/user/self/pic",
+  "/",
   authenticate,
   upload.single("image"),
   profilePictureController.uploadProfilePicture
 );
-
-router.get(
-  "/user/self/pic",
-  authenticate,
-  profilePictureController.getProfilePicture
-);
-
-router.delete(
-  "/user/self/pic",
-  authenticate,
-  profilePictureController.deleteProfilePicture
-);
+router.get("/", authenticate, profilePictureController.getProfilePicture);
+router.delete("/", authenticate, profilePictureController.deleteProfilePicture);
 
 module.exports = router;
