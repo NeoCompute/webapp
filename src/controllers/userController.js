@@ -78,4 +78,8 @@ const updateUserInfo = async (req, res, next) => {
   }
 };
 
-module.exports = { getUserInfo, updateUserInfo, createUserInfo };
+module.exports = {
+  getUserInfo,
+  updateUserInfo,
+  createUserInfo,
+};
