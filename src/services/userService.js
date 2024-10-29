@@ -10,6 +10,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
+
 const filterAllowedFields = (updates, allowedFields) => {
   return Object.keys(updates)
     .filter((key) => allowedFields.includes(key))
@@ -22,21 +23,24 @@ const filterAllowedFields = (updates, allowedFields) => {
 const createUser = async (userData) => {
   try {
     const { email, password, firstName, lastName } = userData;
+    logger.info("Initiating user creation", { email, firstName, lastName });
 
     const passwordError = validatePassword(password);
     if (passwordError) {
+      logger.warn("Password validation failed", {
+        email,
+        reason: passwordError,
+      });
       throw new ValidateError(passwordError);
     }
 
     const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
+      logger.warn("User already exists", { email });
       throw new ValidateError("A user with this email already exists.");
     }
-    // console.log(saltRounds);
-    logger.info(saltRounds);
 
     const salt = await bcrypt.genSalt(saltRounds);
-
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const token = generateToken();
@@ -52,9 +56,10 @@ const createUser = async (userData) => {
       token_expiry: expirationTime,
     });
 
+    logger.info("User created successfully", { userId: newUser.id, email });
     return newUser;
   } catch (error) {
-    console.error("Error in createUser:", error.message);
+    logger.error("Failed to create user", { email, error: error.message });
     if (error instanceof ValidationError || error instanceof ValidateError) {
       logger.error(error.message);
       throw error;
@@ -66,16 +71,21 @@ const createUser = async (userData) => {
 const updateUser = async (userId, updates) => {
   try {
     const allowedFields = ["firstName", "lastName", "password"];
+    logger.info("Initiating user update", { userId, updates });
 
-    const updateKeys = Object.keys(updates);
-
+    // const updateKeys = Object.keys(updates);
     if (updates.hasOwnProperty("password")) {
       if (!updates.password || updates.password.trim() === "") {
+        logger.warn("Password update failed - empty password", { userId });
         throw new ValidateError("Password cannot be empty.");
       }
 
       const passwordError = validatePassword(updates.password);
       if (passwordError) {
+        logger.warn("Password validation failed", {
+          userId,
+          reason: passwordError,
+        });
         throw new ValidateError(passwordError);
       }
     }
@@ -98,12 +108,13 @@ const updateUser = async (userId, updates) => {
     );
 
     if (!updatedUser) {
+      logger.warn("User update failed - user not found", { userId });
       throw new ValidateError("User not found.");
     }
 
     return updatedUser;
   } catch (error) {
-    logger.error("Error in UpdateUser: ", error);
+    logger.error("Error in updateUser", { userId, error: error.message });
     if (error instanceof ValidationError || error instanceof ValidateError) {
       throw error;
     }
