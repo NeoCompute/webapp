@@ -1,6 +1,7 @@
 const express = require("express");
 const healthRoutes = require("./routes/healthRoutes");
 const userRoutes = require("./routes/userRoutes");
+const profilePictureRoutes = require("./routes/profilePictureRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const logger = require("./utils/logger");
 const apiMetricsMiddleware = require("./middlewares/metricsMiddleware");
@@ -26,6 +27,7 @@ app.use(apiMetricsMiddleware);
 // Register routes
 app.use("/healthz", healthRoutes);
 app.use("/v1", userRoutes);
+app.use("/v1", profilePictureRoutes);
 
 // Handle undefined routes
 app.use((req, res) => {
