@@ -10,33 +10,18 @@ const sendErrorResponse = (res, status, message, logData = {}) => {
   res.status(status).json({ message });
 };
 
-const isAuthorizedUser = (authenticatedUserId, userId) => {
-  return userId && userId === authenticatedUserId;
-};
-
 const isValidFileType = (file) => {
   return file && SUPPORTED_FILE_TYPES.includes(file.mimetype);
 };
 
 const uploadProfilePicture = async (req, res, next) => {
   try {
-    const { id: authenticatedUserId } = req.user;
-    const { userId } = req.body;
+    const userId = req.user.id;
     const file = req.file;
 
     logger.info("Starting profile picture upload", {
-      authenticatedUserId,
-      targetUserId: userId,
+      userId,
     });
-
-    if (!isAuthorizedUser(authenticatedUserId, userId)) {
-      return sendErrorResponse(
-        res,
-        403,
-        "Unauthorized profile picture upload attempt",
-        { authenticatedUserId, targetUserId: userId }
-      );
-    }
 
     if (!isValidFileType(file)) {
       return sendErrorResponse(res, 400, "Unsupported file format", {

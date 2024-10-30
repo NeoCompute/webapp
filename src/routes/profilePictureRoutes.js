@@ -13,7 +13,7 @@ router.all("/", methodHandler(["POST", "GET", "DELETE"]));
 router.post(
   "/",
   authenticate,
-  upload.single("image"),
+  upload.single("profilePic"),
   profilePictureController.uploadProfilePicture
 );
 router.get("/", authenticate, profilePictureController.getProfilePicture);
