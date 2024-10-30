@@ -44,7 +44,8 @@ if (ENVIRONMENT === "local") {
       logStreamName: CLOUDWATCH_LOG_STREAM,
       awsRegion: AWS_REGION,
       jsonMessage: true,
-    })
+    }),
+    new winston.transports.File({ filename: "combined.log" })
   );
 }
 
