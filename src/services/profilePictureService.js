@@ -1,6 +1,6 @@
 const imageRepository = require("../repositories/imageRepository");
 const { uploadImage, deleteImage, getImageUrl } = require("../utils/s3Client");
-const { v4: uuidv4 } = require("uuid");
+// const { v4: uuidv4 } = require("uuid");
 const { DatabaseError, ValidateError } = require("../errors/customErrors");
 const logger = require("../utils/logger");
 
@@ -12,7 +12,9 @@ const uploadProfilePicture = async (
   fileExtension,
   mimetype
 ) => {
-  const fileName = `${userId}/${uuidv4()}.${fileExtension}`;
+  // const fileName = `${userId}/${uuidv4()}.${fileExtension}`;
+  const fileName = `${userId}/image-file.${fileExtension}`;
+  logger.info("fileName: ", fileName);
   logger.info("Initiating profile picture upload", {
     userId,
     fileName,

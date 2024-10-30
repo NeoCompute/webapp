@@ -34,8 +34,12 @@ const deleteImage = async (fileName, bucketName) => {
   return performS3Action("deleteObject", params);
 };
 
+// const getImageUrl = (bucketName, fileName) => {
+//   return `https://${bucketName}.s3.amazonaws.com/${fileName}`;
+// };
+
 const getImageUrl = (bucketName, fileName) => {
-  return `https://${bucketName}.s3.amazonaws.com/${fileName}`;
+  return `${bucketName}/${fileName}`;
 };
 
 module.exports = { uploadImage, deleteImage, getImageUrl, performS3Action };
