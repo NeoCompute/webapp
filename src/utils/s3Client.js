@@ -22,7 +22,6 @@ const uploadImage = async (fileContent, fileName, bucketName, mimetype) => {
     Key: fileName,
     Body: fileContent,
     ContentType: mimetype,
-    ACL: "public-read",
   };
   return performS3Action("upload", params);
 };
