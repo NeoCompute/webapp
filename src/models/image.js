@@ -23,11 +23,6 @@ const Image = dbConnection.define(
     url: {
       type: DataTypes.STRING,
       allowNull: false,
-      validate: {
-        isUrl: {
-          msg: "URL must be a valid URL",
-        },
-      },
     },
     upload_date: {
       type: DataTypes.DATE,
