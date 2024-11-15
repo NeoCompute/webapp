@@ -185,19 +185,21 @@ jobs:
             exit 1
           fi
 
+          echo "LATEST_LAUNCH_TEMPLATE_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+
           echo "Latest Launch Template Version: $LATEST_VERSION"
           echo "Fetched AMI ID in create new launch template: $NEW_AMI_ID"
 
           aws ec2 create-launch-template-version \
             --launch-template-id ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
-            --source-version $LATEST_VERSION \
+            --source-version ${{env.LATEST_LAUNCH_TEMPLATE_VERSION}} \
             --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}"
 
       - name: Update ASG to Use Latest Launch Template Version
         run: |
           aws autoscaling update-auto-scaling-group \
             --auto-scaling-group-name ${{ secrets.AWS_ASG_NAME }} \
-            --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"$LATEST_VERSION\"}"
+            --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"${{env.LATEST_LAUNCH_TEMPLATE_VERSION}}\"}"
 
       - name: Trigger Instance Refresh
         run: |
