@@ -39,6 +39,9 @@ const createUserInfo = async (req, res, next) => {
       "account_created",
       "account_updated",
       "token_expiry",
+      "isVerified",
+      "verificationToken",
+      "verificationTokenExpiry",
     ];
     const safeUser = omitFields(userObj, fieldsToOmit);
 
@@ -69,6 +72,9 @@ const updateUserInfo = async (req, res, next) => {
       "token",
       "account_updated",
       "token_expiry",
+      "isVerified",
+      "verificationToken",
+      "verificationTokenExpiry",
     ];
     const safeUser = omitFields(userObj, fieldsToOmit);
     res.status(200).json(safeUser);
