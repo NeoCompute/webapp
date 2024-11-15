@@ -12,10 +12,6 @@ dotenv.config();
 
 const aws_topic_arn = process.env.SNS_TOPIC_ARN;
 
-if (!aws_topic_arn) {
-  throw new Error("SNS_TOPIC_ARN environment variable is not set");
-}
-
 const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
 
 const filterAllowedFields = (updates, allowedFields) => {
