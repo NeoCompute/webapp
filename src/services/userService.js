@@ -1,4 +1,3 @@
-const AWS = require("aws-sdk");
 const userRepository = require("../repositories/userRepository");
 const bcrypt = require("bcrypt");
 const generateToken = require("../utils/tokenGenerator");
@@ -6,13 +5,12 @@ const { ValidationError } = require("sequelize");
 const { DatabaseError, ValidateError } = require("../errors/customErrors");
 const validatePassword = require("../utils/validatePassword");
 const logger = require("../utils/logger");
+const publishMessageToSNSTopic = require("../utils/publishMessageToSNSTopic");
 
 const dotenv = require("dotenv");
 dotenv.config();
 
-const sns = new AWS.SNS({
-  region: process.env.AWS_REGION,
-});
+const aws_topic_arn = process.env.SNS_TOPIC_ARN;
 
 const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
 
@@ -58,8 +56,6 @@ const createUser = async (userData) => {
     const verificationToken = generateToken();
     // const verificationTokenExpiry = Date.now() + 2 * 60 * 1000;
 
-    console.log("Creating a new user ");
-
     const newUser = await userRepository.createUser({
       firstName,
       lastName,
@@ -70,8 +66,6 @@ const createUser = async (userData) => {
       verificationToken: verificationToken,
     });
 
-    logger.info("User created successfully", { userId: newUser.id, email });
-
     const message = {
       email: newUser.email,
       firstName: newUser.firstName,
@@ -79,16 +73,9 @@ const createUser = async (userData) => {
       verificationToken: verificationToken,
     };
 
-    const params = {
-      Message: JSON.stringify(message),
-      TopicArn: process.env.SNS_TOPIC_ARN,
-    };
+    await publishMessageToSNSTopic(aws_topic_arn, message);
 
-    await sns.publish(params).promise();
-    logger.info("Verification email published to SNS", {
-      email: newUser.email,
-    });
-
+    logger.info("User created successfully", { userId: newUser.id, email });
     return newUser;
   } catch (error) {
     logger.error("Failed to create user", { error: error.message });
