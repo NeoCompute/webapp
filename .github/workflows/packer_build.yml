@@ -184,12 +184,14 @@ jobs:
             echo "Failed to fetch the latest version of the Launch Template."
             exit 1
           fi
+
           echo "Latest Launch Template Version: $LATEST_VERSION"
+          echo "Fetched AMI ID in create new launch template: $NEW_AMI_ID"
 
           aws ec2 create-launch-template-version \
             --launch-template-id ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
             --source-version $LATEST_VERSION \
-            --launch-template-data "{\"ImageId\":\"$NEW_AMI_ID\"}"
+            --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}"
 
       - name: Update ASG to Use Latest Launch Template Version
         run: |
