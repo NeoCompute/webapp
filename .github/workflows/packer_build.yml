@@ -189,10 +189,11 @@ jobs:
 
           echo "Latest Launch Template Version: $LATEST_VERSION"
           echo "Fetched AMI ID in create new launch template: $NEW_AMI_ID"
+          echo "Fetched AMI ID in create new launch template: ${{ env.AMI_ID }}"
 
           aws ec2 create-launch-template-version \
             --launch-template-id ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
-            --source-version ${{env.LATEST_LAUNCH_TEMPLATE_VERSION}} \
+            --source-version $LATEST_VERSION \
             --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}"
 
       - name: Update ASG to Use Latest Launch Template Version
