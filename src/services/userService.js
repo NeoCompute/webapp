@@ -41,8 +41,17 @@ const createUser = async (userData) => {
 
     const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
-      logger.warn("User already exists", { email });
-      throw new ValidateError("A user with this email already exists.");
+      if (existingUser.isVerified) {
+        logger.warn("User already exists and is verified", { email });
+        throw new ValidateError(
+          "A user with this email already exists and is verified."
+        );
+      } else {
+        logger.warn("User already exists but is not verified", { email });
+        throw new ValidateError(
+          "A user with this email already exists but is not verified."
+        );
+      }
     }
 
     const salt = await bcrypt.genSalt(saltRounds);

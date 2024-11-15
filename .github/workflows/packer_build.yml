@@ -169,6 +169,13 @@ jobs:
           IMAGE_NAME="webapp-v${{ steps.parse_version.outputs.MAJOR }}.${{ steps.parse_version.outputs.MINOR }}.${{ steps.parse_version.outputs.PATCH }}-${{ steps.create_timestamp.outputs.TIMESTAMP }}"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
 
+      # - name: Packer Build
+      #   run: |
+      #     packer build \
+      #     -var 'artifact_path=webapp.zip' \
+      #     -var 'ami_name=webapp-${{ steps.create_image_name.outputs.IMAGE_NAME }}' \
+      #     ./packer
+
       - name: Packer Build
         run: |
           packer build \
@@ -179,3 +186,53 @@ jobs:
           -var 'source_ami_id=${{ secrets.AWS_SOURCE_AMI_ID }}' \
           -var 'demo_account_id=${{ secrets.AWS_DEMO_ACCOUNT_ID }}' \
           ./packer
+
+      - name: Create New Launch Template Version
+        run: |
+          set -e
+          NEW_AMI_ID=$(aws ec2 describe-images --filters "Name=tag:Name,Values=${{ steps.create_image_name.outputs.IMAGE_NAME }}" --query "Images[0].ImageId" --output text)
+          if [ -z "$NEW_AMI_ID" ]; then
+            echo "Failed to fetch AMI ID"
+            exit 1
+          fi
+          aws ec2 create-launch-template-version \
+            --launch-template-id ${{secrets.AWS_LAUNCH_TEMPLATE_ID}} \
+            --source-version $Latest \
+            --launch-template-data "{\"ImageId\":\"$NEW_AMI_ID\"}"
+
+      - name: Update ASG to Use Latest Launch Template Version
+        run: |
+          aws autoscaling update-auto-scaling-group \
+            --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
+            --launch-template "{\"LaunchTemplateId\":\"${{secrets.AWS_LAUNCH_TEMPLATE_ID}}\",\"Version\":\"$Latest\"}"
+
+      - name: Trigger Instance Refresh
+        run: |
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
+            --preferences "{\"MinHealthyPercentage\":50,\"InstanceWarmup\":300}"
+
+      - name: Wait for Instance Refresh Completion
+        run: |
+          REFRESH_ID=$(aws autoscaling describe-instance-refreshes \
+            --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
+            --query "InstanceRefreshes[0].InstanceRefreshId" --output text)
+
+          echo "Waiting for Instance Refresh to complete..."
+          while true; do
+            STATUS=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
+              --instance-refresh-ids $REFRESH_ID \
+              --query "InstanceRefreshes[0].Status" --output text)
+
+            echo "Current Status: $STATUS"
+            if [[ "$STATUS" == "Successful" ]]; then
+              echo "Instance Refresh completed successfully."
+              break
+            elif [[ "$STATUS" == "Failed" || "$STATUS" == "Cancelled" ]]; then
+              echo "Instance Refresh failed or was cancelled."
+              exit 1
+            else
+              sleep 30
+            fi
+          done
