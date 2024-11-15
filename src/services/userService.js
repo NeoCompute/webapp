@@ -11,7 +11,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const sns = new AWS.SNS({
-  region: process.env.AWS_REGION, // Ensure AWS_REGION is defined in .env
+  region: process.env.AWS_REGION,
 });
 
 const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
