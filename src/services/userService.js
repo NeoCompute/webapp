@@ -1,3 +1,4 @@
+const AWS = require("aws-sdk");
 const userRepository = require("../repositories/userRepository");
 const bcrypt = require("bcrypt");
 const generateToken = require("../utils/tokenGenerator");
@@ -8,6 +9,10 @@ const logger = require("../utils/logger");
 
 const dotenv = require("dotenv");
 dotenv.config();
+
+const sns = new AWS.SNS({
+  region: process.env.AWS_REGION, // Ensure AWS_REGION is defined in .env
+});
 
 const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
 
