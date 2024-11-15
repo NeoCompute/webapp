@@ -195,16 +195,28 @@ jobs:
             echo "Failed to fetch AMI ID"
             exit 1
           fi
+          echo "New AMI ID: $NEW_AMI_ID"
+
+          LATEST_VERSION=$(aws ec2 describe-launch-templates \
+            --launch-template-ids ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
+            --query "LaunchTemplates[0].LatestVersionNumber" --output text)
+
+          if [ -z "$LATEST_VERSION" ]; then
+            echo "Failed to fetch the latest version of the Launch Template."
+            exit 1
+          fi
+          echo "Latest Launch Template Version: $LATEST_VERSION"
+
           aws ec2 create-launch-template-version \
-            --launch-template-id ${{secrets.AWS_LAUNCH_TEMPLATE_ID}} \
-            --source-version $Latest \
+            --launch-template-id ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
+            --source-version $LATEST_VERSION \
             --launch-template-data "{\"ImageId\":\"$NEW_AMI_ID\"}"
 
       - name: Update ASG to Use Latest Launch Template Version
         run: |
           aws autoscaling update-auto-scaling-group \
-            --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
-            --launch-template "{\"LaunchTemplateId\":\"${{secrets.AWS_LAUNCH_TEMPLATE_ID}}\",\"Version\":\"$Latest\"}"
+            --auto-scaling-group-name ${{ secrets.AWS_ASG_NAME }} \
+            --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"$LATEST_VERSION\"}"
 
       - name: Trigger Instance Refresh
         run: |
@@ -217,8 +229,13 @@ jobs:
           REFRESH_ID=$(aws autoscaling describe-instance-refreshes \
             --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
             --query "InstanceRefreshes[0].InstanceRefreshId" --output text)
+            
+          echo "Instance Refresh ID: $REFRESH_ID"
 
           echo "Waiting for Instance Refresh to complete..."
+          MAX_RETRIES=20  # 10 minutes assuming a 30-second sleep
+          RETRY_COUNT=0
+
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
               --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
@@ -232,7 +249,11 @@ jobs:
             elif [[ "$STATUS" == "Failed" || "$STATUS" == "Cancelled" ]]; then
               echo "Instance Refresh failed or was cancelled."
               exit 1
+            elif [[ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]]; then
+              echo "Instance Refresh timed out after $((MAX_RETRIES * 30 / 60)) minutes."
+              exit 1
             else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
               sleep 30
             fi
           done
