@@ -79,7 +79,7 @@ const updateUserInfo = async (req, res, next) => {
 };
 
 const verifyUserInfo = async (req, res, next) => {
-  const { token } = req.query;
+  const { token } = req.params.token;
   try {
     const user = await userService.verifyUser(token);
 

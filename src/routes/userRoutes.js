@@ -24,6 +24,6 @@ router.put(
   validateJsonContentType,
   userController.updateUserInfo
 );
-router.get("/self/verify", userController.verifyUserInfo);
+router.get("/verify/:token", userController.verifyUserInfo);
 
 module.exports = router;

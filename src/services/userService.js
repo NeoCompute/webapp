@@ -49,7 +49,7 @@ const createUser = async (userData) => {
 
     // Generate token and set expiration time for email verification
     const verificationToken = generateToken();
-    const verificationTokenExpiry = Date.now() + 2 * 60 * 1000;
+    // const verificationTokenExpiry = Date.now() + 2 * 60 * 1000;
 
     const newUser = await userRepository.createUser({
       firstName,
@@ -59,7 +59,6 @@ const createUser = async (userData) => {
       token,
       token_expiry: expirationTime,
       verificationToken: verificationToken,
-      verificationTokenExpiry: verificationTokenExpiry,
     });
 
     logger.info("User created successfully", { userId: newUser.id, email });
@@ -69,7 +68,6 @@ const createUser = async (userData) => {
       firstName: newUser.firstName,
       lastName: newUser.lastName,
       verificationToken: verificationToken,
-      verificationTokenExpires: verificationTokenExpiry.toISOString(),
     };
 
     const params = {
@@ -149,23 +147,20 @@ const updateUser = async (userId, updates) => {
 
 const verifyUser = async (token) => {
   try {
-    const user = await User.findOne({
-      where: {
-        verificationToken: token,
-        verificationTokenExpiry: {
-          [Op.gt]: Date.now(),
-        },
-      },
-    });
+    const user = await userRepository.findUserByTokenForVerification(token);
 
     if (!user) {
+      logger.warn("Invalid or expired token", { token });
       throw new ValidateError("Invalid or expired token");
     }
 
-    user.isVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpiry = null;
-    await user.save();
+    // check if the user is already verified
+    if (user.verified) {
+      logger.warn("User is already verified", { userId: user.id });
+      throw new ValidateError("User is already verified");
+    }
+    await userRepository.updateUserVerificationStatus(user);
+    logger.info("User verified successfully", { userId: user.id });
   } catch (error) {
     logger.error("Error in verifyUser", { error: error.message });
     if (error instanceof ValidationError || error instanceof ValidateError) {
