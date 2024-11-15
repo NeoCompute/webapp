@@ -1,33 +1,14 @@
-name: Packer Build
+name: Application build test update infra
 
 on:
   pull_request:
     branches:
       - main
-    # types: [closed]
     types: [opened, synchronize, reopened]
 
 jobs:
-  packer_build:
+  setup_environment:
     runs-on: ubuntu-latest
-
-    env:
-      PORT: ${{ secrets.PORT }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_PORT: ${{ secrets.DB_PORT }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_DATABASE: ${{ secrets.DB_DATABASE }}
-      DB_POOL_MAX: ${{ secrets.DB_POOL_MAX }}
-      DB_POOL_MIN: ${{ secrets.DB_POOL_MIN }}
-      DB_POOL_ACQUIRE: ${{ secrets.DB_POOL_ACQUIRE }}
-      DB_POOL_IDLE: ${{ secrets.DB_POOL_IDLE }}
-      BCRYPT_SALT_ROUNDS: ${{ secrets.BCRYPT_SALT_ROUNDS }}
-      CLOUDWATCH_LOG_GROUP: ${{secrets.CLOUDWATCH_LOG_GROUP}}
-      CLOUDWATCH_LOG_STREAM: ${{secrets.CLOUDWATCH_LOG_STREAM}}
-      AWS_REGION: ${{secrets.AWS_REGION}}
-      ENVIRONMENT: ${{secrets.ENVIRONMENT}}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -71,6 +52,10 @@ jobs:
           echo "Granting all privileges on database... '$DB_DATABASE' to user... '$DB_USER'"
           sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USER;"
 
+  create_artifacts:
+    runs-on: ubuntu-latest
+    needs: setup_environment
+    steps:
       - name: Create .env File
         env:
           PORT: ${{ secrets.PORT }}
@@ -119,6 +104,10 @@ jobs:
           zip -r webapp.zip . \
             -x "*.git*" "*.github*" "node_modules/*"
 
+  build_ami:
+    runs-on: ubuntu-latest
+    needs: create_artifacts
+    steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
@@ -147,7 +136,6 @@ jobs:
         id: create_image_name
         run: |
           IMAGE_NAME="webapp-$(date +%Y%m%d%H%M%S)"
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
 
       - name: Packer Build
@@ -161,6 +149,10 @@ jobs:
           -var 'demo_account_id=${{ secrets.AWS_DEMO_ACCOUNT_ID }}' \
           ./packer
 
+  update_launch_template:
+    runs-on: ubuntu-latest
+    needs: build_ami
+    steps:
       - name: Fetch AMI ID
         id: fetch_ami
         run: |
@@ -197,6 +189,10 @@ jobs:
             --auto-scaling-group-name ${{ secrets.AWS_ASG_NAME }} \
             --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"$LATEST_VERSION\"}"
 
+  refresh_instances:
+    runs-on: ubuntu-latest
+    needs: update_launch_template
+    steps:
       - name: Trigger Instance Refresh
         run: |
           aws autoscaling start-instance-refresh \
