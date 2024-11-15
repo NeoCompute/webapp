@@ -34,6 +34,8 @@ const createUser = async (userData) => {
       throw new ValidateError(passwordError);
     }
 
+    logger.debug("Checking if user already exists", { email });
+
     const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
       logger.warn("User already exists", { email });
@@ -50,6 +52,8 @@ const createUser = async (userData) => {
     // Generate token and set expiration time for email verification
     const verificationToken = generateToken();
     // const verificationTokenExpiry = Date.now() + 2 * 60 * 1000;
+
+    console.log("Creating a new user ");
 
     const newUser = await userRepository.createUser({
       firstName,
@@ -82,7 +86,7 @@ const createUser = async (userData) => {
 
     return newUser;
   } catch (error) {
-    logger.error("Failed to create user", { email, error: error.message });
+    logger.error("Failed to create user", { error: error.message });
     if (error instanceof ValidationError || error instanceof ValidateError) {
       logger.error(error.message);
       throw error;

@@ -27,6 +27,7 @@ const findByToken = async (token) => {
 
 const findByEmail = async (email) => {
   try {
+    console.log("email", email);
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return null;
