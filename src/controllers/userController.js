@@ -78,8 +78,25 @@ const updateUserInfo = async (req, res, next) => {
   }
 };
 
+const verifyUserInfo = async (req, res, next) => {
+  const { token } = req.params.token;
+  try {
+    const user = await userService.verifyUser(token);
+
+    if (verificationResult.success) {
+      return res.status(200).json({ message: verificationResult.message });
+    } else {
+      return res.status(400).json({ message: verificationResult.message });
+    }
+  } catch (error) {
+    logger.error("Error in verifyUser", { error: error.message });
+    next(error);
+  }
+};
+
 module.exports = {
   getUserInfo,
   updateUserInfo,
   createUserInfo,
+  verifyUserInfo,
 };

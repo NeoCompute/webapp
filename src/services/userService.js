@@ -47,6 +47,10 @@ const createUser = async (userData) => {
     const expirationTime = new Date();
     expirationTime.setHours(expirationTime.getHours() + 1); // Token expiration set to 1 hour
 
+    // Generate token and set expiration time for email verification
+    const verificationToken = generateToken();
+    // const verificationTokenExpiry = Date.now() + 2 * 60 * 1000;
+
     const newUser = await userRepository.createUser({
       firstName,
       lastName,
@@ -54,9 +58,28 @@ const createUser = async (userData) => {
       password: hashedPassword,
       token,
       token_expiry: expirationTime,
+      verificationToken: verificationToken,
     });
 
     logger.info("User created successfully", { userId: newUser.id, email });
+
+    const message = {
+      email: newUser.email,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      verificationToken: verificationToken,
+    };
+
+    const params = {
+      Message: JSON.stringify(message),
+      TopicArn: process.env.SNS_TOPIC_ARN,
+    };
+
+    await sns.publish(params).promise();
+    logger.info("Verification email published to SNS", {
+      email: newUser.email,
+    });
+
     return newUser;
   } catch (error) {
     logger.error("Failed to create user", { email, error: error.message });
@@ -122,7 +145,33 @@ const updateUser = async (userId, updates) => {
   }
 };
 
+const verifyUser = async (token) => {
+  try {
+    const user = await userRepository.findUserByTokenForVerification(token);
+
+    if (!user) {
+      logger.warn("Invalid or expired token", { token });
+      throw new ValidateError("Invalid or expired token");
+    }
+
+    // check if the user is already verified
+    if (user.verified) {
+      logger.warn("User is already verified", { userId: user.id });
+      throw new ValidateError("User is already verified");
+    }
+    await userRepository.updateUserVerificationStatus(user);
+    logger.info("User verified successfully", { userId: user.id });
+  } catch (error) {
+    logger.error("Error in verifyUser", { error: error.message });
+    if (error instanceof ValidationError || error instanceof ValidateError) {
+      throw error;
+    }
+    throw new DatabaseError("Error verifying user.");
+  }
+};
+
 module.exports = {
   createUser,
   updateUser,
+  verifyUser,
 };

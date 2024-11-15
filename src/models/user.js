@@ -70,6 +70,20 @@ const User = dbConnection.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    verificationToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    verificationTokenExpiry: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
   },
   {
     tableName: "users",
