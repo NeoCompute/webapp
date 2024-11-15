@@ -4,7 +4,8 @@ on:
   pull_request:
     branches:
       - main
-    types: [closed]
+    # types: [closed]
+    types: [opened, synchronize, reopened]
 
 jobs:
   packer_build:
@@ -142,39 +143,11 @@ jobs:
       - name: Packer Validate
         run: packer validate ./packer
 
-      - name: Get Application Version
-        id: get_version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Parse Version
-        id: parse_version
-        run: |
-          VERSION=${{ steps.get_version.outputs.VERSION }}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          echo "MAJOR=$MAJOR" >> $GITHUB_OUTPUT
-          echo "MINOR=$MINOR" >> $GITHUB_OUTPUT
-          echo "PATCH=$PATCH" >> $GITHUB_OUTPUT
-
-      - name: Create Timestamp
-        id: create_timestamp
-        run: |
-          TIMESTAMP=$(date +%s)
-          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
-
       - name: Create Image Name
         id: create_image_name
         run: |
-          IMAGE_NAME="webapp-v${{ steps.parse_version.outputs.MAJOR }}.${{ steps.parse_version.outputs.MINOR }}.${{ steps.parse_version.outputs.PATCH }}-${{ steps.create_timestamp.outputs.TIMESTAMP }}"
+          IMAGE_NAME="webapp-$(date +%Y%m%d%H%M%S)"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
-
-      # - name: Packer Build
-      #   run: |
-      #     packer build \
-      #     -var 'artifact_path=webapp.zip' \
-      #     -var 'ami_name=webapp-${{ steps.create_image_name.outputs.IMAGE_NAME }}' \
-      #     ./packer
 
       - name: Packer Build
         run: |
