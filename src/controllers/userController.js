@@ -100,9 +100,22 @@ const verifyUserInfo = async (req, res, next) => {
   }
 };
 
+const deleteUserInfo = async (req, res, next) => {
+  try {
+    const email = req.body.email;
+    logger.info("Deleting user information", { email });
+    await userService.deleteUser(email);
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    logger.error("Error in deleteUser", { error: error.message });
+    next(error);
+  }
+};
+
 module.exports = {
   getUserInfo,
   updateUserInfo,
   createUserInfo,
   verifyUserInfo,
+  deleteUserInfo,
 };
