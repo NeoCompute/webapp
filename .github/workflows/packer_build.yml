@@ -5,12 +5,14 @@ on:
     branches:
       - main
     types: [closed]
+    # types: [opened, synchronize, reopened]
 
 jobs:
   packer_build:
     runs-on: ubuntu-latest
 
     env:
+      AWS_CLI_LOG_LEVEL: debug
       PORT: ${{ secrets.PORT }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PORT: ${{ secrets.DB_PORT }}
@@ -142,39 +144,12 @@ jobs:
       - name: Packer Validate
         run: packer validate ./packer
 
-      - name: Get Application Version
-        id: get_version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Parse Version
-        id: parse_version
-        run: |
-          VERSION=${{ steps.get_version.outputs.VERSION }}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          echo "MAJOR=$MAJOR" >> $GITHUB_OUTPUT
-          echo "MINOR=$MINOR" >> $GITHUB_OUTPUT
-          echo "PATCH=$PATCH" >> $GITHUB_OUTPUT
-
-      - name: Create Timestamp
-        id: create_timestamp
-        run: |
-          TIMESTAMP=$(date +%s)
-          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
-
       - name: Create Image Name
         id: create_image_name
         run: |
-          IMAGE_NAME="webapp-v${{ steps.parse_version.outputs.MAJOR }}.${{ steps.parse_version.outputs.MINOR }}.${{ steps.parse_version.outputs.PATCH }}-${{ steps.create_timestamp.outputs.TIMESTAMP }}"
+          IMAGE_NAME="webapp-$(date +%Y%m%d%H%M%S)"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
-
-      # - name: Packer Build
-      #   run: |
-      #     packer build \
-      #     -var 'artifact_path=webapp.zip' \
-      #     -var 'ami_name=webapp-${{ steps.create_image_name.outputs.IMAGE_NAME }}' \
-      #     ./packer
 
       - name: Packer Build
         run: |
@@ -187,15 +162,20 @@ jobs:
           -var 'demo_account_id=${{ secrets.AWS_DEMO_ACCOUNT_ID }}' \
           ./packer
 
+      - name: Fetch AMI ID
+        id: fetch_ami
+        run: |
+          NEW_AMI_ID=$(aws ec2 describe-images --filters "Name=name,Values=$IMAGE_NAME" --query "Images[0].ImageId" --output text)
+          if [ -z "$NEW_AMI_ID" ]; then
+            echo "Failed to fetch AMI ID."
+            exit 1
+          fi
+          echo "AMI_ID=$NEW_AMI_ID" >> $GITHUB_ENV
+          echo "Fetched AMI ID: $NEW_AMI_ID"
+
       - name: Create New Launch Template Version
         run: |
           set -e
-          NEW_AMI_ID=$(aws ec2 describe-images --filters "Name=tag:Name,Values=${{ steps.create_image_name.outputs.IMAGE_NAME }}" --query "Images[0].ImageId" --output text)
-          if [ -z "$NEW_AMI_ID" ]; then
-            echo "Failed to fetch AMI ID"
-            exit 1
-          fi
-          echo "New AMI ID: $NEW_AMI_ID"
 
           LATEST_VERSION=$(aws ec2 describe-launch-templates \
             --launch-template-ids ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
@@ -205,18 +185,29 @@ jobs:
             echo "Failed to fetch the latest version of the Launch Template."
             exit 1
           fi
+
+          echo "LATEST_LAUNCH_TEMPLATE_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+
           echo "Latest Launch Template Version: $LATEST_VERSION"
+          echo "Fetched AMI ID in create new launch template: $NEW_AMI_ID"
+          echo "Fetched AMI ID in create new launch template: ${{ env.AMI_ID }}"
 
           aws ec2 create-launch-template-version \
             --launch-template-id ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
             --source-version $LATEST_VERSION \
-            --launch-template-data "{\"ImageId\":\"$NEW_AMI_ID\"}"
+            --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}"
+
+          UPDATED_VERSION=$(aws ec2 describe-launch-templates \
+          --launch-template-ids ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
+          --query "LaunchTemplates[0].LatestVersionNumber" --output text)
+          echo "Updated Launch Template Version: $UPDATED_VERSION"
+          echo "UPDATED_LAUNCH_TEMPLATE_VERSION=$UPDATED_VERSION" >> $GITHUB_ENV
 
       - name: Update ASG to Use Latest Launch Template Version
         run: |
           aws autoscaling update-auto-scaling-group \
             --auto-scaling-group-name ${{ secrets.AWS_ASG_NAME }} \
-            --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"$LATEST_VERSION\"}"
+            --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"${{env.UPDATED_LAUNCH_TEMPLATE_VERSION}}\"}"
 
       - name: Trigger Instance Refresh
         run: |
@@ -233,7 +224,7 @@ jobs:
           echo "Instance Refresh ID: $REFRESH_ID"
 
           echo "Waiting for Instance Refresh to complete..."
-          MAX_RETRIES=20  # 10 minutes assuming a 30-second sleep
+          MAX_RETRIES=50
           RETRY_COUNT=0
 
           while true; do
