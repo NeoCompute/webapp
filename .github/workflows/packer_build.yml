@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      AWS_CLI_LOG_LEVEL: debug
       PORT: ${{ secrets.PORT }}
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PORT: ${{ secrets.DB_PORT }}
@@ -196,11 +197,17 @@ jobs:
             --source-version $LATEST_VERSION \
             --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}"
 
+          UPDATED_VERSION=$(aws ec2 describe-launch-templates \
+          --launch-template-ids ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
+          --query "LaunchTemplates[0].LatestVersionNumber" --output text)
+          echo "Updated Launch Template Version: $UPDATED_VERSION"
+          echo "UPDATED_LAUNCH_TEMPLATE_VERSION=$UPDATED_VERSION" >> $GITHUB_ENV
+
       - name: Update ASG to Use Latest Launch Template Version
         run: |
           aws autoscaling update-auto-scaling-group \
             --auto-scaling-group-name ${{ secrets.AWS_ASG_NAME }} \
-            --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"${{env.LATEST_LAUNCH_TEMPLATE_VERSION}}\"}"
+            --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"${{env.UPDATED_LAUNCH_TEMPLATE_VERSION}}\"}"
 
       - name: Trigger Instance Refresh
         run: |
