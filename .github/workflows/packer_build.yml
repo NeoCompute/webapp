@@ -213,7 +213,7 @@ jobs:
         run: |
           aws autoscaling start-instance-refresh \
             --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
-            --preferences "{\"MinHealthyPercentage\":50,\"InstanceWarmup\":300}"
+            --preferences "{\"MinHealthyPercentage\":50,\"InstanceWarmup\":200}"
 
       - name: Wait for Instance Refresh Completion
         run: |
@@ -224,7 +224,7 @@ jobs:
           echo "Instance Refresh ID: $REFRESH_ID"
 
           echo "Waiting for Instance Refresh to complete..."
-          MAX_RETRIES=50
+          MAX_RETRIES=60
           RETRY_COUNT=0
 
           while true; do
