@@ -7,7 +7,7 @@ const payloadChecker = require("../middlewares/payloadChecker");
 const checkIfVerified = require("../middlewares/checkIfVerified");
 const router = express.Router();
 
-router.all("/self", methodHandler(["GET", "PUT"]));
+router.all("/self", methodHandler(["GET", "PUT", "DELETE"]));
 router.post("/", validateJsonContentType, userController.createUserInfo);
 // Protected Routes
 router.get(
@@ -24,6 +24,7 @@ router.put(
   validateJsonContentType,
   userController.updateUserInfo
 );
+router.delete("/self", authenticate, userController.deleteUserInfo);
 router.get("/verify/:token", userController.verifyUserInfo);
 
 module.exports = router;

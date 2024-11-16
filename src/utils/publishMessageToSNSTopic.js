@@ -8,7 +8,7 @@ const publishMessageToSNSTopic = async (topicArn, message) => {
       Message: JSON.stringify(message),
       TopicArn: topicArn,
     };
-
+    console.log("i am here");
     const response = await sns.publish(params).promise();
     logger.info("Message published successfully:", response.MessageId);
   } catch (error) {

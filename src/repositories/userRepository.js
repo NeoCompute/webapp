@@ -27,7 +27,6 @@ const findByToken = async (token) => {
 
 const findByEmail = async (email) => {
   try {
-    console.log("email", email);
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return null;
@@ -107,6 +106,11 @@ const updateUserVerificationStatus = async (user) => {
   await user.save();
 };
 
+const deleteUser = async (user) => {
+  console.log("i am here");
+  await user.destroy();
+};
+
 module.exports = {
   findByToken,
   findUserByTokenForVerification,
@@ -114,4 +118,5 @@ module.exports = {
   updateUser,
   createUser,
   updateUserVerificationStatus,
+  deleteUser,
 };

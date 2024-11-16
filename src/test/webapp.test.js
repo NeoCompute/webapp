@@ -138,10 +138,10 @@ describe("Test 10 | Get user information", () => {
 
 // Unauthorized Access and Method Not Allowed
 describe("Test 12 | Unauthorized Access and Method Not Allowed", () => {
-  it("should return 405 Method Not Allowed for DELETE request", async () => {
-    const res = await request(app).delete("/v1/user/self");
-    expect(res.statusCode).toEqual(405);
-  });
+  // it("should return 405 Method Not Allowed for DELETE request", async () => {
+  //   const res = await request(app).delete("/v1/user/self");
+  //   expect(res.statusCode).toEqual(405);
+  // });
 
   it("should return 405 Method Not Allowed for PATCH request", async () => {
     const res = await request(app).patch("/v1/user/self");
