@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const sns = new AWS.SNS();
+const logger = require("./logger");
 
 const publishMessageToSNSTopic = async (topicArn, message) => {
   try {
