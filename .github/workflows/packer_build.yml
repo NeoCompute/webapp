@@ -4,8 +4,8 @@ on:
   pull_request:
     branches:
       - main
-    # types: [closed]
-    types: [opened, synchronize, reopened]
+    types: [closed]
+    # types: [opened, synchronize, reopened]
 
 jobs:
   packer_build:
@@ -224,7 +224,7 @@ jobs:
           echo "Instance Refresh ID: $REFRESH_ID"
 
           echo "Waiting for Instance Refresh to complete..."
-          MAX_RETRIES=20  # 10 minutes assuming a 30-second sleep
+          MAX_RETRIES=50
           RETRY_COUNT=0
 
           while true; do
