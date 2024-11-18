@@ -173,12 +173,22 @@ jobs:
           echo "AMI_ID=$NEW_AMI_ID" >> $GITHUB_ENV
           echo "Fetched AMI ID: $NEW_AMI_ID"
 
+      - name: Fetch Launch Template id
+        run: |
+          LAUNCH_TEMPLATE_ID=$(aws ec2 describe-launch-templates --filters "Name=tag:Name,Values=webapp-launch-template-*" --query "LaunchTemplates[0].LaunchTemplateId" --output text)
+          if [ -z "$LAUNCH_TEMPLATE_ID" ]; then
+            echo "Failed to fetch Launch Template ID."
+            exit 1
+          fi
+          echo "AWS_LAUNCH_TEMPLATE_ID=$LAUNCH_TEMPLATE_ID" >> $GITHUB_ENV
+          echo "Fetched Launch Template ID: $LAUNCH_TEMPLATE_ID"
+
       - name: Create New Launch Template Version
         run: |
           set -e
 
           LATEST_VERSION=$(aws ec2 describe-launch-templates \
-            --launch-template-ids ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
+            --launch-template-ids ${{ env.LAUNCH_TEMPLATE_ID }} \
             --query "LaunchTemplates[0].LatestVersionNumber" --output text)
 
           if [ -z "$LATEST_VERSION" ]; then
@@ -193,32 +203,42 @@ jobs:
           echo "Fetched AMI ID in create new launch template: ${{ env.AMI_ID }}"
 
           aws ec2 create-launch-template-version \
-            --launch-template-id ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
+            --launch-template-id ${{ env.LAUNCH_TEMPLATE_ID }} \
             --source-version $LATEST_VERSION \
             --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}"
 
           UPDATED_VERSION=$(aws ec2 describe-launch-templates \
-          --launch-template-ids ${{ secrets.AWS_LAUNCH_TEMPLATE_ID }} \
+          --launch-template-ids ${{ env.LAUNCH_TEMPLATE_ID }} \
           --query "LaunchTemplates[0].LatestVersionNumber" --output text)
           echo "Updated Launch Template Version: $UPDATED_VERSION"
           echo "UPDATED_LAUNCH_TEMPLATE_VERSION=$UPDATED_VERSION" >> $GITHUB_ENV
 
+      - name: Fetch Auto Scaling Group Name
+        run: |
+          ASG_NAME=$(aws autoscaling describe-auto-scaling-groups --query "AutoScalingGroups[?contains(Tags[?Key=='Name'].Value, 'webapp-ec2-instance')].AutoScalingGroupName" --output text)
+          if [ -z "$ASG_NAME" ]; then
+            echo "Failed to fetch Auto Scaling Group Name."
+            exit 1
+          fi
+          echo "AWS_ASG_NAME=$ASG_NAME" >> $GITHUB_ENV
+          echo "Fetched Auto Scaling Group Name: $ASG_NAME"
+
       - name: Update ASG to Use Latest Launch Template Version
         run: |
           aws autoscaling update-auto-scaling-group \
-            --auto-scaling-group-name ${{ secrets.AWS_ASG_NAME }} \
-            --launch-template "{\"LaunchTemplateId\":\"${{ secrets.AWS_LAUNCH_TEMPLATE_ID }}\",\"Version\":\"${{env.UPDATED_LAUNCH_TEMPLATE_VERSION}}\"}"
+            --auto-scaling-group-name ${{ env.ASG_NAME }} \
+            --launch-template "{\"LaunchTemplateId\":\"${{ env.LAUNCH_TEMPLATE_ID }}\",\"Version\":\"${{env.UPDATED_LAUNCH_TEMPLATE_VERSION}}\"}"
 
       - name: Trigger Instance Refresh
         run: |
           aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
+            --auto-scaling-group-name ${{env.ASG_NAME}} \
             --preferences "{\"MinHealthyPercentage\":50,\"InstanceWarmup\":200}"
 
       - name: Wait for Instance Refresh Completion
         run: |
           REFRESH_ID=$(aws autoscaling describe-instance-refreshes \
-            --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
+            --auto-scaling-group-name ${{env.ASG_NAME}} \
             --query "InstanceRefreshes[0].InstanceRefreshId" --output text)
             
           echo "Instance Refresh ID: $REFRESH_ID"
@@ -229,7 +249,7 @@ jobs:
 
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
-              --auto-scaling-group-name ${{secrets.AWS_ASG_NAME}} \
+              --auto-scaling-group-name ${{env.ASG_NAME}} \
               --instance-refresh-ids $REFRESH_ID \
               --query "InstanceRefreshes[0].Status" --output text)
 
