@@ -204,7 +204,7 @@ jobs:
 
           aws ec2 create-launch-template-version \
             --launch-template-id ${{ env.LAUNCH_TEMPLATE_ID }} \
-            --source-version $LATEST_VERSION \
+            --source-version ${{env.LATEST_VERSION}} \
             --launch-template-data "{\"ImageId\":\"${{ env.AMI_ID }}\"}"
 
           UPDATED_VERSION=$(aws ec2 describe-launch-templates \
