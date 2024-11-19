@@ -171,6 +171,7 @@ jobs:
             exit 1
           fi
           echo "Fetched AMI ID: $NEW_AMI_ID"
+          echo "NEW_AMI_ID=$NEW_AMI_ID" >> $GITHUB_ENV
 
       - name: Fetch Launch Template id
         run: |
@@ -180,6 +181,7 @@ jobs:
             exit 1
           fi
           echo "Fetched Launch Template ID: $LAUNCH_TEMPLATE_ID"
+          echo "LAUNCH_TEMPLATE_ID=$LAUNCH_TEMPLATE_ID" >> $GITHUB_ENV
 
       - name: Create New Launch Template Version
         run: |
@@ -194,13 +196,13 @@ jobs:
             exit 1
           fi
 
-          echo "LATEST_LAUNCH_TEMPLATE_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
 
           echo "Latest Launch Template Version: $LATEST_VERSION"
           echo "Fetched AMI ID in create new launch template: $NEW_AMI_ID"
 
           aws ec2 create-launch-template-version \
-            --launch-template-id $LAUNCH_TEMPLATE_ID} \
+            --launch-template-id $LAUNCH_TEMPLATE_ID \
             --source-version $LATEST_VERSION \
             --launch-template-data "{\"ImageId\":\"$NEW_AMI_ID\"}"
 
@@ -209,6 +211,7 @@ jobs:
           --query "LaunchTemplates[0].LatestVersionNumber" --output text)
 
           echo "Updated Launch Template Version: $UPDATED_VERSION"
+          echo "UPDATED_VERSION=$UPDATED_VERSION" >> $GITHUB_ENV
 
       - name: Fetch Auto Scaling Group Name
         run: |
@@ -219,6 +222,7 @@ jobs:
           fi
 
           echo "Fetched Auto Scaling Group Name: $ASG_NAME"
+          echo "ASG_NAME=$ASG_NAME" >> $GITHUB_ENV
 
       - name: Update ASG to Use Latest Launch Template Version
         run: |
@@ -239,6 +243,7 @@ jobs:
             --query "InstanceRefreshes[0].InstanceRefreshId" --output text)
             
           echo "Instance Refresh ID: $REFRESH_ID"
+          echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
 
           echo "Waiting for Instance Refresh to complete..."
           MAX_RETRIES=60
