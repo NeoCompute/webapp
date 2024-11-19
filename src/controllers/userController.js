@@ -85,7 +85,7 @@ const updateUserInfo = async (req, res, next) => {
 };
 
 const verifyUserInfo = async (req, res, next) => {
-  const { token } = req.params.token;
+  const { token } = req.params;
   try {
     logger.info("Verifying user information", { token });
     const verificationResult = await userService.verifyUser(token);

@@ -24,7 +24,7 @@ router.put(
   validateJsonContentType,
   userController.updateUserInfo
 );
-router.delete("/self", authenticate, userController.deleteUserInfo);
-router.get("/verify/:token", userController.verifyUserInfo);
+router.delete("/self", userController.deleteUserInfo);
+router.get("/self/verify/:token", userController.verifyUserInfo);
 
 module.exports = router;

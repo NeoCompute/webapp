@@ -67,6 +67,8 @@ const createUser = async (userData) => {
     const verificationTokenExpiry =
       Date.now() + token_expiration_time * 60 * 1000;
 
+    console.log("verificationTokenExpiry: ", verificationTokenExpiry);
+
     const newUser = await userRepository.createUser({
       firstName,
       lastName,
@@ -161,6 +163,7 @@ const verifyUser = async (token) => {
       return { success: false, message: "Invalid or expired token." };
     }
     const now = new Date();
+    console.log("now: ", now);
     if (user.verificationTokenExpiry < now) {
       return { success: false, message: "Token has expired." };
     }
