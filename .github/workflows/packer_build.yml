@@ -244,6 +244,9 @@ jobs:
             --preferences "{\"MinHealthyPercentage\":50,\"InstanceWarmup\":200}"
 
       - name: Wait for Instance Refresh Completion
+        env:
+          MAX_RETRIES: ${{ secrets.MAX_RETRIES }}
+          RETRY_COUNT: ${{ secrets.RETRY_COUNT }}
         run: |
           REFRESH_ID=$(aws autoscaling describe-instance-refreshes \
             --auto-scaling-group-name $ASG_NAME \
@@ -253,8 +256,8 @@ jobs:
           echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
 
           echo "Waiting for Instance Refresh to complete..."
-          MAX_RETRIES=60
-          RETRY_COUNT=0
+          MAX_RETRIES=${MAX_RETRIES:-60}
+          RETRY_COUNT=${RETRY_COUNT:-0}
 
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
