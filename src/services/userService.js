@@ -11,6 +11,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const aws_topic_arn = process.env.SNS_TOPIC_ARN;
+const token_expiration_time = process.env.TOKEN_EXPIRATION_TIME || 2;
 
 const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
 
@@ -63,7 +64,8 @@ const createUser = async (userData) => {
 
     // Generate token and set expiration time for email verification
     const verificationToken = generateToken();
-    // const verificationTokenExpiry = Date.now() + 2 * 60 * 1000;
+    const verificationTokenExpiry =
+      Date.now() + token_expiration_time * 60 * 1000;
 
     const newUser = await userRepository.createUser({
       firstName,
@@ -73,6 +75,7 @@ const createUser = async (userData) => {
       token,
       token_expiry: expirationTime,
       verificationToken: verificationToken,
+      verificationTokenExpiry: verificationTokenExpiry,
     });
 
     const message = {
