@@ -9,7 +9,7 @@ const { DatabaseError } = require("../errors/customErrors");
 
 const findByToken = async (token) => {
   try {
-    const user = await User.findOne({ where: { token } });
+    const user = await User.findOne({ where: { verificationToken: token } });
     if (!user) {
       return null;
     }
