@@ -155,25 +155,20 @@ const updateUser = async (userId, updates) => {
 
 const verifyUser = async (token) => {
   try {
-    const user = await userRepository.findUserByTokenForVerification(token);
+    const user = await userRepository.findByToken(token);
 
     if (!user) {
-      logger.warn("Invalid or expired token", { token });
-      throw new ValidateError("Invalid or expired token");
+      return { success: false, message: "Invalid or expired token." };
+    }
+    const now = new Date();
+    if (user.verificationTokenExpiry < now) {
+      return { success: false, message: "Token has expired." };
     }
 
-    // check if the user is already verified
-    if (user.verified) {
-      logger.warn("User is already verified", { userId: user.id });
-      throw new ValidateError("User is already verified");
-    }
     await userRepository.updateUserVerificationStatus(user);
-    logger.info("User verified successfully", { userId: user.id });
+    return { success: true, message: "User verified successfully." };
   } catch (error) {
     logger.error("Error in verifyUser", { error: error.message });
-    if (error instanceof ValidationError || error instanceof ValidateError) {
-      throw error;
-    }
     throw new DatabaseError("Error verifying user.");
   }
 };

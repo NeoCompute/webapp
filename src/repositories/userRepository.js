@@ -76,26 +76,12 @@ const createUser = async (userData) => {
 
 const findUserByTokenForVerification = async (token) => {
   try {
-    const user = await User.findOne({
-      where: {
-        verificationToken: token,
-        verificationTokenExpiry: {
-          [Op.gt]: Date.now(),
-        },
-      },
-    });
-    if (!user) {
-      return null;
-    }
-    return user;
+    const user = await User.findOne({ where: { verificationToken: token } });
   } catch (error) {
-    if (
-      error instanceof ValidationError ||
-      error instanceof UniqueConstraintError
-    ) {
+    if (error instanceof ValidationError) {
       throw error;
     }
-    throw new DatabaseError("Failed to find user by token");
+    throw new DatabaseError("Failed to find user by verification token");
   }
 };
 
