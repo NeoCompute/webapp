@@ -7,13 +7,17 @@ const getUserInfo = async (req, res, next) => {
   try {
     logger.info("Fetching user information", { userId: req.user.id });
     const user = req.user.toJSON();
-    const safeUser = omitFields(user, [
+    const fieldsToOmit = [
       "password",
-      "token",
       "account_created",
+      "token",
       "account_updated",
       "token_expiry",
-    ]);
+      "isVerified",
+      "verificationToken",
+      "verificationTokenExpiry",
+    ];
+    const safeUser = omitFields(user, fieldsToOmit);
     res.status(200).json(safeUser);
   } catch (err) {
     logger.error("Error in getUserInfo", { error: err.message });
@@ -101,22 +105,22 @@ const verifyUserInfo = async (req, res, next) => {
   }
 };
 
-const deleteUserInfo = async (req, res, next) => {
-  try {
-    const email = req.body.email;
-    logger.info("Deleting user information", { email });
-    await userService.deleteUser(email);
-    res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    logger.error("Error in deleteUser", { error: error.message });
-    next(error);
-  }
-};
+// const deleteUserInfo = async (req, res, next) => {
+//   try {
+//     const email = req.body.email;
+//     logger.info("Deleting user information", { email });
+//     await userService.deleteUser(email);
+//     res.status(200).json({ message: "User deleted successfully" });
+//   } catch (error) {
+//     logger.error("Error in deleteUser", { error: error.message });
+//     next(error);
+//   }
+// };
 
 module.exports = {
   getUserInfo,
   updateUserInfo,
   createUserInfo,
   verifyUserInfo,
-  deleteUserInfo,
+  // deleteUserInfo,
 };
