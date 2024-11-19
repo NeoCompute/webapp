@@ -176,27 +176,27 @@ const verifyUser = async (token) => {
   }
 };
 
-const deleteUser = async (email) => {
-  try {
-    const user = await userRepository.findByEmail(email);
-    if (!user) {
-      logger.warn("User not found", { email });
-      throw new ValidateError("User not found");
-    }
-    await userRepository.deleteUser(user);
-    logger.info("User deleted successfully", { email });
-  } catch (error) {
-    logger.error("Error in deleteUser", { error: error.message });
-    if (error instanceof ValidationError || error instanceof ValidateError) {
-      throw error;
-    }
-    throw new DatabaseError("Error deleting user.");
-  }
-};
+// const deleteUser = async (email) => {
+//   try {
+//     const user = await userRepository.findByEmail(email);
+//     if (!user) {
+//       logger.warn("User not found", { email });
+//       throw new ValidateError("User not found");
+//     }
+//     await userRepository.deleteUser(user);
+//     logger.info("User deleted successfully", { email });
+//   } catch (error) {
+//     logger.error("Error in deleteUser", { error: error.message });
+//     if (error instanceof ValidationError || error instanceof ValidateError) {
+//       throw error;
+//     }
+//     throw new DatabaseError("Error deleting user.");
+//   }
+// };
 
 module.exports = {
   createUser,
   updateUser,
   verifyUser,
-  deleteUser,
+  // deleteUser,
 };

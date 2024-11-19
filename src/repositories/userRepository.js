@@ -93,7 +93,6 @@ const updateUserVerificationStatus = async (user) => {
 };
 
 const deleteUser = async (user) => {
-  console.log("i am here");
   await user.destroy();
 };
 
