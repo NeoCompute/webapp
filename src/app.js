@@ -26,6 +26,7 @@ app.use(apiMetricsMiddleware);
 
 // Register routes
 app.use("/healthz", healthRoutes);
+app.use("/cicd", healthRoutes);
 app.use("/v1/user", userRoutes);
 app.use("/v1/user/self/pic", profilePictureRoutes);
 
