@@ -28,6 +28,7 @@ jobs:
       CLOUDWATCH_LOG_STREAM: ${{secrets.CLOUDWATCH_LOG_STREAM}}
       AWS_REGION: ${{secrets.AWS_REGION}}
       ENVIRONMENT: ${{secrets.ENVIRONMENT}}
+      PROD_ENVIRONMENT: ${{secrets.PROD_ENVIRONMENT}}
 
     steps:
       - name: Checkout code
@@ -162,12 +163,24 @@ jobs:
           -var 'demo_account_id=${{ secrets.AWS_DEMO_ACCOUNT_ID }}' \
           ./packer
 
-      - name: Configure AWS Credentials for Demo Account
+      - name: Configure AWS Credentials for DEMO Account
+        if: env.PROD_ENVIRONMENT == 'demo'
         uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
           aws-access-key-id: ${{ secrets.AWS_DEMO_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_DEMO_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEMO_REGION }}
+
+      - name: Configure AWS Credentials for DEV Account
+        if: env.PROD_ENVIRONMENT == 'dev'
+        uses: aws-actions/configure-aws-credentials@v4.0.2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_DEV_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_DEV_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEV_REGION }}
+
+      - name: Verify AWS CLI Configuration
+        run: aws sts get-caller-identity
 
       - name: Fetch AMI ID
         id: fetch_ami
@@ -246,7 +259,6 @@ jobs:
       - name: Wait for Instance Refresh Completion
         env:
           MAX_RETRIES: ${{ secrets.MAX_RETRIES }}
-          RETRY_COUNT: ${{ secrets.RETRY_COUNT }}
         run: |
           REFRESH_ID=$(aws autoscaling describe-instance-refreshes \
             --auto-scaling-group-name $ASG_NAME \
@@ -257,7 +269,7 @@ jobs:
 
           echo "Waiting for Instance Refresh to complete..."
           MAX_RETRIES=${MAX_RETRIES:-60}
-          RETRY_COUNT=${RETRY_COUNT:-0}
+          RETRY_COUNT=0
 
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
