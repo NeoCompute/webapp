@@ -1,6 +1,17 @@
 # Webapp
 
-Web application for CSYE 6225 (Network Structures & Cloud Computing) 
+A scalable User Management Service built with Node.js and Express.js, supporting CRUD operations along with email verification during user registration. The infrastructure is deployed on AWS, provisioned using Terraform.
+
+### Features
+ - User Management: Provides complete CRUD functionality for managing user information.
+ - Health Monitoring: Includes a dedicated endpoint to monitor the application’s health and its connected services.
+ - Secure Deployment: Ensures data protection through HTTPS using SSL certificates and customer-managed encryption keys.
+ - Scalability and Reliability: Achieves high availability and scalability using managed instance groups and load balancers.
+ - Event-Driven Architecture: Leverages AWS SNS and lambda Functions to send verification emails through Mailgun.
+
+### Architecture Diagram 
+
+![Architecture diagram](./assets/Cloud6225.jpeg)
 
 ### Technologies used:
 - Programming Language: ```JavaScript```
@@ -29,7 +40,7 @@ source_ami_id   = ""
 demo_account_id = ""
 ```
 
-### How to Build and run the application locally
+### To build and run the application locally
 
 1. Generate npm packages
 ```bash
@@ -48,6 +59,14 @@ DB_POOL_MIN=
 DB_POOL_ACQUIRE=
 DB_POOL_IDLE=
 BCRYPT_SALT_ROUNDS=
+TOKEN_EXPIRATION_TIME=
+CLOUDWATCH_LOG_GROUP=
+CLOUDWATCH_LOG_STREAM=
+AWS_REGION=
+ENVIRONMENT=
+S3_BUCKET_NAME=
+AWS_PROFILE=
+SNS_TOPIC_ARN=
 ```
 3. To Run the Application
 ```bash
@@ -62,73 +81,9 @@ npm run dev
 npm run test
 ```
 
-### Commands Used
+### To Setup Infra with Terraform 
 
-#### Linux
-1. Change Directory
-```bash 
-cd 
-```
-2. Create new directory
-```bash
-mkdir
-```
-3. Remove or delete a directory
-```bash
-rmdir
-```
-4. list contents of the directory
-```bash
-ls
-```
-
-#### Git
-1. To Clone repository
-```bash
-git clone
-```
-2. To check git branch
-```bash
-git branch
-```
-3. To create and change to new branch 
-```bash 
-git checkout -b <branch name>
-```
-4. To stage changes
-```bash
-git add
-```
-5. To commit changes
-```bash
-git commit -m ""
-```
-6. To push changes to remote 
-```bash
-git push -u origin
-```
-7. To merge
-```bash 
-git merge
-```
-8. To fetch or pull
-```bash
-git pull origin main
-```
-
-#### Postgres
-1. Create Database
-```bash
-CREATE DATABASE cloudDB;
-```
-2. Create User/Role
-```bash
-CREATE USER cloudUser WITH PASSWORD 'password';
-```
-3. Grant Privileges
-```bash
-GRANT ALL PRIVILEGES ON DATABASE cloudDB TO cloudUser;
-```
+ - refer the tf-aws-infra repo - [link to IaC repo](https://github.com/NeoCompute/tf-aws-infra)
 
 ### References
 

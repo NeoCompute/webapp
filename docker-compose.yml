@@ -1,0 +1,44 @@
+version: "3.8"
+services:
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=xxx
+      - DB_HOST=xxx
+      - DB_PORT=xxx
+      - DB_USER=xxxx
+      - DB_PASSWORD=xxx
+      - DB_DATABASE=xxxx
+      - BCRYPT_SALT_ROUNDS=xxx
+      - TOKEN_EXPIRATION_TIME=xxxx
+      - CLOUDWATCH_LOG_GROUP=xxxx
+      - CLOUDWATCH_LOG_STREAM=xxxx
+      - AWS_REGION=xxxx
+      - ENVIRONMENT=xxxx
+      - S3_BUCKET_NAME=xxxx
+      - AWS_PROFILE=xxxx
+      - SNS_TOPIC_ARN=xxxx
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:14
+    container_name: postgres_db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: cloudUser
+      POSTGRES_PASSWORD: Cloud@123
+      POSTGRES_DB: cloudDB
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:
